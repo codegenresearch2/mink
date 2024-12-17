@@ -130,9 +130,9 @@ def build_ik(
         configuration,
         [c for c in limits if c.constraint_type == "inequality"],
         dt,
-        eta=1_000,
+        eta=50000.0,
     )
-    return Problem(P, q, lower, upper, noriginal=configuration.nv)
+    return Problem.initialize(configuration.nv, P, q, lower, upper)
 
 
 def solve_ik(
@@ -142,7 +142,6 @@ def solve_ik(
     damping: float = 1e-12,
     safety_break: bool = False,
     limits: Optional[Sequence[Limit]] = None,
-    warmstart: bool = False,
 ) -> np.ndarray:
     """Solve the differential inverse kinematics problem.
 
@@ -167,6 +166,6 @@ def solve_ik(
     """
     configuration.check_limits(safety_break=safety_break)
     problem = build_ik(configuration, tasks, dt, damping, limits)
-    dq = problem.solve(warmstart=warmstart)
+    dq = problem.solve()
     v: np.ndarray = dq / dt
     return v

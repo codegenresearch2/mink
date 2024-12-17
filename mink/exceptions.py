@@ -96,10 +96,3 @@ class NotWithinConfigurationLimits(MinkError):
             f"{lower} <= {value} <= {upper}"
         )
         super().__init__(message)
-
-
-class IKFailure(MinkError):
-    """Exception raised when the inverse kinematics problem cannot be solved."""
-
-    def __init__(self, message: str):
-        super().__init__(message)

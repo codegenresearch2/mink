@@ -58,7 +58,7 @@ class VelocityLimit(Limit):
                     f"Got: {max_vel.shape}"
                 )
             index_list.extend(range(vadr, vadr + vdim))
-            limit[vadr:vadr + vdim] = max_vel
+            limit[vadr : vadr + vdim] = max_vel
 
         self.indices = np.array(index_list)
         self.indices.setflags(write=False)
