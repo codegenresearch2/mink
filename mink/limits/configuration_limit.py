@@ -92,10 +92,8 @@ class ConfigurationLimit(Limit):
             :math:`G \Delta q \leq h`, or ``None`` if there is no limit.
         """
         del dt  # Unused.
-        # if self.projection_matrix is None:
-            # return Constraint()
         if self.projection_matrix is None:
-            return BoxConstraint()
+            return Constraint()
 
         # Upper.
         delta_q_max = np.zeros((self.model.nv,))

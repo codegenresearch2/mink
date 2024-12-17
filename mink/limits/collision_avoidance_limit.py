@@ -142,6 +142,11 @@ class CollisionAvoidanceLimit(Limit):
             constraint.
     """
 
+    @property
+    def constraint_type(self) -> str:
+        """Returns the type of constraint."""
+        return "inequality"
+
     def __init__(
         self,
         model: mujoco.MjModel,
@@ -189,7 +194,7 @@ class CollisionAvoidanceLimit(Limit):
         configuration: Configuration,
         dt: float,
     ) -> Constraint:
-        upper_bound = np.full((self.max_num_contacts,), np.inf)
+        upper_bound = np.full((self.max_num_contacts,), mujoco.mjMAXVAL)
         coefficient_matrix = np.zeros((self.max_num_contacts, self.model.nv))
         for idx, (geom1_id, geom2_id) in enumerate(self.geom_id_pairs):
             contact = self._compute_contact_with_minimum_distance(

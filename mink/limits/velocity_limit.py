@@ -42,7 +42,7 @@ class VelocityLimit(Limit):
             velocities: Dictionary mapping joint name to maximum allowed magnitude in
                 [m]/[s] for slide joints and [rad]/[s] for hinge joints.
         """
-        limit_list: list[float] = []
+        limit = np.full((model.nv,), mujoco.mjMAXVAL)
         index_list: list[int] = []
         for joint_name, max_vel in velocities.items():
             jid = model.joint(joint_name).id
@@ -58,11 +58,11 @@ class VelocityLimit(Limit):
                     f"Got: {max_vel.shape}"
                 )
             index_list.extend(range(vadr, vadr + vdim))
-            limit_list.extend(max_vel.tolist())
+            limit[vadr:vadr + vdim] = max_vel
 
         self.indices = np.array(index_list)
         self.indices.setflags(write=False)
-        self.limit = np.array(limit_list)
+        self.limit = limit
         self.limit.setflags(write=False)
 
         nb = len(self.indices)
@@ -95,7 +95,7 @@ class VelocityLimit(Limit):
         """
         del configuration  # Unused.
         # if self.projection_matrix is None:
-            # return Constraint()
+        # return Constraint()
         # G = np.vstack([self.projection_matrix, -self.projection_matrix])
         # h = np.hstack([dt * self.limit, dt * self.limit])
         # return Constraint(G=G, h=h)

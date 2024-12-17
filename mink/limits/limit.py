@@ -13,6 +13,8 @@ class Constraint(NamedTuple):
 
     lower: Optional[np.ndarray] = None
     upper: Optional[np.ndarray] = None
+
+    # Optional inequality constraint of the form f <= Gx <= h.
     G: Optional[np.ndarray] = None
     h: Optional[np.ndarray] = None
 
@@ -46,6 +48,11 @@ class Limit(abc.ABC):
     which takes in the current robot configuration and integration time step and
     returns an instance of :class:`Constraint`.
     """
+
+    @property
+    def constraint_type(self) -> str:
+        """Returns the type of constraint."""
+        return "box"
 
     @abc.abstractmethod
     def compute_qp_inequalities(

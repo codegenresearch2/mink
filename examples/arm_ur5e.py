@@ -1,7 +1,3 @@
-# Set logging level to debug.
-import logging
-logging.basicConfig(level=logging.INFO)
-
 from pathlib import Path
 
 import mujoco
@@ -28,6 +24,7 @@ if __name__ == "__main__":
             orientation_cost=1.0,
             lm_damping=1.0,
         ),
+        posture_task := mink.PostureTask(model=model, cost=1e-3),
     ]
 
     # Enable collision avoidance between the following geoms:
@@ -37,7 +34,7 @@ if __name__ == "__main__":
 
     limits = [
         mink.ConfigurationLimit(model=model),
-        # mink.CollisionAvoidanceLimit(model=model, geom_pairs=collision_pairs),
+        mink.CollisionAvoidanceLimit(model=model, geom_pairs=collision_pairs),
     ]
 
     max_velocities = {
@@ -54,7 +51,6 @@ if __name__ == "__main__":
     mid = model.body("target").mocapid[0]
     model = configuration.model
     data = configuration.data
-    solver = "quadprog"
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -63,12 +59,12 @@ if __name__ == "__main__":
 
         # Initialize to the home keyframe.
         configuration.update_from_keyframe("home")
+        posture_task.set_target_from_configuration(configuration)
 
         # Initialize the mocap target at the end-effector site.
         mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
 
-        rate = RateLimiter(frequency=500.0, warn=False)
-        vel = None
+        rate = RateLimiter(frequency=100.0, warn=False)
         while viewer.is_running():
             # Update task target.
             T_wt = mink.SE3.from_mocap_name(model, data, "target")
@@ -76,7 +72,7 @@ if __name__ == "__main__":
 
             # Compute velocity and integrate into the next configuration.
             vel = mink.solve_ik(
-                configuration, tasks, rate.dt, 1e-3, limits=limits, prev_sol=vel
+                configuration, tasks, rate.dt, limits=limits, warmstart=True
             )
             configuration.integrate_inplace(vel, rate.dt)
             mujoco.mj_camlight(model, data)

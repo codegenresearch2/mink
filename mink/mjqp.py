@@ -1,49 +1,41 @@
 """Convenience wrapper around the MuJoCo QP solver."""
 
 from __future__ import annotations
-from dataclasses import dataclass
+
 from typing import Optional
-import numpy as np
+
 import mujoco
+import numpy as np
 
 from .exceptions import IKFailure
-from .configuration import Configuration
-
-import logging
 
 
-@dataclass(frozen=True)
 class Problem:
-    """Wrapper over `mujoco.mju_boxQP`."""
-
-    H: np.ndarray
-    c: np.ndarray
-    lower: np.ndarray
-    upper: np.ndarray
-    n: int
-    R: np.ndarray
-    index: np.ndarray
-
-    @staticmethod
-    def initialize(
-        configuration: Configuration,
+    def __init__(
+        self,
         H: np.ndarray,
         c: np.ndarray,
         lower: np.ndarray,
         upper: np.ndarray,
+        noriginal: int,
     ):
-        n = configuration.nv
-        R = np.zeros((n, n + 7))
-        index = np.zeros(n, np.int32)
-        return Problem(H, c, lower, upper, n, R, index)
+        self.n = H.shape[0]
+        self.H = H
+        self.c = c
+        self.lower = lower
+        self.upper = upper
+        self.R = np.zeros((self.n, self.n + 7))
+        self.index = np.zeros(self.n, np.int32)
 
-    def solve(self, prev_sol: Optional[np.ndarray] = None) -> Optional[np.ndarray]:
-        if prev_sol is not None:
-            logging.debug("Using previous solution as initial guess.")
-            dq = prev_sol
-            assert dq.shape == (self.n,)
+        self.noriginal = noriginal
+        self._prev_sol = None
+
+    def solve(self, warmstart: bool = False) -> Optional[np.ndarray]:
+        if warmstart and self._prev_sol is not None:
+            dq = self._prev_sol
         else:
             dq = np.empty((self.n,))
+
         rank = mujoco.mju_boxQP(
             res=dq,
             R=self.R,
@@ -55,5 +47,6 @@ class Problem:
         )
         if rank == -1:
             raise IKFailure("QP solver failed to find a solution.")
-        dq[np.isnan(dq)] = 0.0
-        return dq
+
+        self._prev_sol = dq
+        return dq[: self.noriginal]
