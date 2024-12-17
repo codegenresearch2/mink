@@ -3,11 +3,13 @@
 from typing import Optional, Sequence
 
 import numpy as np
-import qpsolvers
+# import qpsolvers
 
 from .configuration import Configuration
 from .limits import ConfigurationLimit, Limit
 from .tasks import Objective, Task
+
+from .mjqp import Problem
 
 
 def _compute_qp_objective(
@@ -22,22 +24,44 @@ def _compute_qp_objective(
     return Objective(H, c)
 
 
+# def _compute_qp_inequalities(
+#     configuration: Configuration, limits: Optional[Sequence[Limit]], dt: float
+# ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+#     if limits is None:
+#         limits = [ConfigurationLimit(configuration.model)]
+#     G_list: list[np.ndarray] = []
+#     h_list: list[np.ndarray] = []
+#     for limit in limits:
+#         inequality = limit.compute_qp_inequalities(configuration, dt)
+#         if not inequality.inactive:
+#             assert inequality.G is not None and inequality.h is not None  # mypy.
+#             G_list.append(inequality.G)
+#             h_list.append(inequality.h)
+#     if not G_list:
+#         return None, None
+#     return np.vstack(G_list), np.hstack(h_list)
+
+
 def _compute_qp_inequalities(
     configuration: Configuration, limits: Optional[Sequence[Limit]], dt: float
 ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
     if limits is None:
         limits = [ConfigurationLimit(configuration.model)]
-    G_list: list[np.ndarray] = []
-    h_list: list[np.ndarray] = []
+    lower_list: list[np.ndarray] = []
+    upper_list: list[np.ndarray] = []
     for limit in limits:
         inequality = limit.compute_qp_inequalities(configuration, dt)
         if not inequality.inactive:
-            assert inequality.G is not None and inequality.h is not None  # mypy.
-            G_list.append(inequality.G)
-            h_list.append(inequality.h)
-    if not G_list:
+            assert (
+                inequality.lower is not None and inequality.lower is not None
+            )  # mypy.
+            lower_list.append(inequality.lower)
+            upper_list.append(inequality.upper)
+    if not lower_list:
         return None, None
-    return np.vstack(G_list), np.hstack(h_list)
+    lower = np.asarray(lower_list).min(axis=0)
+    upper = np.asarray(upper_list).min(axis=0)
+    return lower, upper
 
 
 def build_ik(
@@ -46,7 +70,7 @@ def build_ik(
     dt: float,
     damping: float = 1e-12,
     limits: Optional[Sequence[Limit]] = None,
-) -> qpsolvers.Problem:
+) -> Problem:
     """Build quadratic program from current configuration and tasks.
 
     Args:
@@ -61,15 +85,17 @@ def build_ik(
         Quadratic program of the inverse kinematics problem.
     """
     P, q = _compute_qp_objective(configuration, tasks, damping)
-    G, h = _compute_qp_inequalities(configuration, limits, dt)
-    return qpsolvers.Problem(P, q, G, h)
+    # G, h = _compute_qp_inequalities(configuration, limits, dt)
+    lower, upper = _compute_qp_inequalities(configuration, limits, dt)
+    # return qpsolvers.Problem(P, q, G, h)
+    return Problem.initialize(configuration, P, q, lower, upper)
 
 
 def solve_ik(
     configuration: Configuration,
     tasks: Sequence[Task],
     dt: float,
-    solver: str,
+    # solver: str,
     damping: float = 1e-12,
     safety_break: bool = False,
     limits: Optional[Sequence[Limit]] = None,
@@ -98,8 +124,10 @@ def solve_ik(
     """
     configuration.check_limits(safety_break=safety_break)
     problem = build_ik(configuration, tasks, dt, damping, limits)
-    result = qpsolvers.solve_problem(problem, solver=solver, **kwargs)
-    dq = result.x
-    assert dq is not None
+    # result = qpsolvers.solve_problem(problem, solver=solver, **kwargs)
+    prev_sol = kwargs.get("prev_sol", None)
+    dq = problem.solve(prev_sol)
+    # dq = result.x
+    # assert dq is not None
     v: np.ndarray = dq / dt
     return v

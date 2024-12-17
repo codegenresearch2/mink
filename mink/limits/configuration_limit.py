@@ -92,8 +92,10 @@ class ConfigurationLimit(Limit):
             :math:`G \Delta q \leq h`, or ``None`` if there is no limit.
         """
         del dt  # Unused.
+        # if self.projection_matrix is None:
+            # return Constraint()
         if self.projection_matrix is None:
-            return Constraint()
+            return BoxConstraint()
 
         # Upper.
         delta_q_max = np.zeros((self.model.nv,))
@@ -117,8 +119,18 @@ class ConfigurationLimit(Limit):
             qpos2=configuration.q,
         )
 
-        p_min = self.gain * delta_q_min[self.indices]
-        p_max = self.gain * delta_q_max[self.indices]
-        G = np.vstack([self.projection_matrix, -self.projection_matrix])
-        h = np.hstack([p_max, p_min])
-        return Constraint(G=G, h=h)
+        # p_min = self.gain * delta_q_min[self.indices]
+        # p_max = self.gain * delta_q_max[self.indices]
+        # G = np.vstack([self.projection_matrix, -self.projection_matrix])
+        # h = np.hstack([p_max, p_min])
+        # return Constraint(
+        #     G=G,
+        #     h=h,
+        #     lower=p_min,
+        #     upper=p_max,
+        # )
+        lower = self.gain * delta_q_min
+        upper = self.gain * delta_q_max
+        lower[~self.indices] = -mujoco.mjMAXVAL
+        upper[~self.indices] = mujoco.mjMAXVAL
+        return Constraint(lower=lower, upper=upper)

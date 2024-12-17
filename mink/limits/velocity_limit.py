@@ -94,8 +94,11 @@ class VelocityLimit(Limit):
             shape (2nb, nv) and h has shape (2nb,).
         """
         del configuration  # Unused.
+        # if self.projection_matrix is None:
+            # return Constraint()
+        # G = np.vstack([self.projection_matrix, -self.projection_matrix])
+        # h = np.hstack([dt * self.limit, dt * self.limit])
+        # return Constraint(G=G, h=h)
         if self.projection_matrix is None:
             return Constraint()
-        G = np.vstack([self.projection_matrix, -self.projection_matrix])
-        h = np.hstack([dt * self.limit, dt * self.limit])
-        return Constraint(G=G, h=h)
+        return Constraint(lower=-dt * self.limit, upper=dt * self.limit)

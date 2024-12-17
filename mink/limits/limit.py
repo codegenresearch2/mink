@@ -9,18 +9,34 @@ from ..configuration import Configuration
 
 
 class Constraint(NamedTuple):
-    r"""Linear inequality constraint of the form :math:`G(q) \Delta q \leq h(q)`.
+    """Box constraint of the form lower <= x <= upper."""
 
-    Inactive if G and h are None.
-    """
-
+    lower: Optional[np.ndarray] = None
+    upper: Optional[np.ndarray] = None
     G: Optional[np.ndarray] = None
     h: Optional[np.ndarray] = None
 
     @property
     def inactive(self) -> bool:
         """Returns True if the constraint is inactive."""
-        return self.G is None and self.h is None
+        return (
+            self.G is None
+            and self.h is None
+            and self.lower is None
+            and self.upper is None
+        )
+
+    @property
+    def is_box_constraint(self) -> bool:
+        """Returns True if the constraint is a box constraint."""
+        is_box = self.lower is not None and self.upper is not None
+        return is_box and not self.is_inequality_constraint
+
+    @property
+    def is_inequality_constraint(self) -> bool:
+        """Returns True if the constraint is an inequality constraint."""
+        is_inequality = self.G is not None and self.h is not None
+        return is_inequality and not self.is_box_constraint
 
 
 class Limit(abc.ABC):
