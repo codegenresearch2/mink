@@ -1,17 +1,12 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+# Configuration file for the Sphinx documentation builder. This file is intended to provide configuration settings for generating documentation using Sphinx. It includes settings for project information, general configuration, and options for HTML output. The documentation is aimed at enhancing understanding and clarity for users.
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+# -- Project information ----------------------------------------------------- This section sets up basic information about the project, such as the project name, copyright, and author.
 
 project = "mink"
 copyright = "2024, Kevin Zakka"
 author = "Kevin Zakka"
 
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+# -- General configuration --------------------------------------------------- This section configures various extensions and settings used by Sphinx to build the documentation.
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -21,28 +16,17 @@ extensions = [
     "sphinx_favicon",
 ]
 
-autodoc_typehints = "both"
-autodoc_class_signature = "separated"
-autodoc_default_options = {
-    "members": True,
-    "member-order": "bysource",
-    "inherited-members": False,
-    "exclude-members": "__init__, __post_init__, __new__",
-}
-
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-source_suffix = {".rst": "restructuredtext"}
+source_suffix = { ".rst": "restructuredtext" }
 
 pygments_style = "sphinx"
 
-autodoc_type_aliases = {
-    "npt.ArrayLike": "ArrayLike",
-}
+napoleon_numpy_docstring = False
+napoleon_use_rtype = False
 
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+# -- Options for HTML output ------------------------------------------------- This section configures the appearance and output format of the HTML documentation.
 
 html_theme = "sphinx_rtd_theme"
 
