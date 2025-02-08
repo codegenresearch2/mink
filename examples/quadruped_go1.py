@@ -49,7 +49,8 @@ if __name__ == "__main__":
         model=model,
         data=data,
         show_left_ui=False,
-        show_right_ui=False
+        show_right_ui=False,
+        warn=False
     ) as viewer:
         mujoco.mjv_defaultFreeCamera(model, viewer.cam)
 
@@ -62,7 +63,7 @@ if __name__ == "__main__":
             mink.move_mocap_to_frame(model, data, f"{foot}_target", foot, "site")
         mink.move_mocap_to_frame(model, data, "trunk_target", "trunk", "body")
 
-        rate = RateLimiter(frequency=500.0)
+        rate = RateLimiter(frequency=500.0, warn=False)
         while viewer.is_running():
             # Update task targets.
             base_task.set_target(mink.SE3.from_mocap_id(data, base_mid))
