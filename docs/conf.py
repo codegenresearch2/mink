@@ -14,9 +14,9 @@ pyproject = toml.load(pyproject_path)
 
 project = "mink"
 version = pyproject["project"]["version"]
-# Ensure version is prefixed with "v" if it is not purely alphabetical
-import re
-version = re.match(r"[a-zA-Z]+", version) and f"v{version}" or version
+# Simplified version handling
+if version[0].isalpha():
+    version = f"v{version}"
 author = pyproject["project"]["authors"][0]["name"]
 copyright = "2024, Kevin Zakka"
 
