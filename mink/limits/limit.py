@@ -15,7 +15,9 @@ class Constraint(NamedTuple):
     """
 
     G: Optional[np.ndarray] = None
+    """Shape (nv, nv)."""
     h: Optional[np.ndarray] = None
+    """Shape (nv,)."""
 
     @property
     def inactive(self) -> bool:
@@ -35,7 +37,7 @@ class Limit(abc.ABC):
     def compute_qp_inequalities(
         self,
         configuration: Configuration,
-        dt: float,
+        time_step: float,
     ) -> Constraint:
         r"""Compute limit as linearized QP inequalities of the form:
 
@@ -49,7 +51,7 @@ class Limit(abc.ABC):
 
         Args:
             configuration: Robot configuration :math:`q`.
-            dt: Integration time step in [s].
+            time_step: Integration time step in [s].
 
         Returns:
             Pair :math:`(G, h)`.
