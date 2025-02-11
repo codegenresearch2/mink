@@ -72,8 +72,8 @@ if __name__ == "__main__":
             name = f"{prefix}/{n}"
             joint_names.append(name)
             velocity_limits[name] = _VELOCITY_LIMITS[n]
-    dof_ids = np.array([model.joint(name).id for name in joint_names])
-    actuator_ids = np.array([model.actuator(name).id for name in joint_names])
+    dof_ids = [model.joint(name).id for name in joint_names]
+    actuator_ids = [model.actuator(name).id for name in joint_names]
 
     configuration = mink.Configuration(model)
 
