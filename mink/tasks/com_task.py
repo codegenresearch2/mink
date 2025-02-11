@@ -48,7 +48,7 @@ class ComTask(Task):
                 f"Cost must be a vector of shape ({self.k},) or a scalar. Got {cost.shape}"
             )
         if not np.all(cost >= 0):
-            raise TaskDefinitionError(f"Cost values must be non-negative. Got {cost}")
+            raise TaskDefinitionError("ComTask cost must be >= 0")
         self.cost[:] = cost
 
     def set_target(self, target_com: npt.ArrayLike) -> None:
