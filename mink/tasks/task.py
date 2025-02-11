@@ -25,7 +25,7 @@ class Objective(NamedTuple):
 class Task(abc.ABC):
     """Abstract base class for kinematic tasks.
 
-    This class defines the interface for all kinematic tasks. Subclasses must implement the following methods:
+    Subclasses must implement the following methods:
     - `compute_error(self, configuration: Configuration) -> np.ndarray`: Compute the task error function at the current configuration.
     - `compute_jacobian(self, configuration: Configuration) -> np.ndarray`: Compute the task Jacobian at the current configuration.
     """
@@ -63,8 +63,6 @@ class Task(abc.ABC):
         .. math::
 
             J(q) \Delta q = -\alpha e(q)
-
-        The Jacobian matrix :math:`J(q) \in \mathbb{R}^{k \times n_v}`, with :math:`n_v` the dimension of the robot's tangent space, is the derivative of the task error :math:`e(q)` with respect to the configuration :math:`q \in \mathbb{R}^{n_q}`.
 
         Args:
             configuration: Robot configuration :math:`q`.
