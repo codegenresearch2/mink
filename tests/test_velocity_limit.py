@@ -20,9 +20,9 @@ class TestVelocityLimit(absltest.TestCase):
     def setUp(self):
         self.configuration = Configuration(self.model)
         self.configuration.update_from_keyframe("stand")
-        # NOTE(kevin): These velocities are arbitrary and do not match real hardware.
+        # Use pi from numpy for consistency with the gold code
         self.velocities = {
-            self.model.joint(i).name: 3.14 for i in range(1, self.model.njnt)
+            self.model.joint(i).name: np.pi for i in range(1, self.model.njnt)
         }
 
     def test_throws_error_if_joint_limit_invalid(self):
@@ -64,7 +64,7 @@ class TestVelocityLimit(absltest.TestCase):
         self.assertEqual(len(limit.indices), nb)
         expected_limit = np.asarray(
             [
-                3.14,
+                np.pi,
             ]
             * nb
         )
