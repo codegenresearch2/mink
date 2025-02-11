@@ -19,6 +19,19 @@ CollisionPairs = Sequence[CollisionPair]
 
 @dataclass(frozen=True)
 class Contact:
+    """Represents a contact between two geoms.
+
+    Attributes:
+        dist (float): The signed distance between the geoms.
+        fromto (np.ndarray): An array of 6 floats representing the points from and to which the contact normal extends.
+        geom1 (int): The ID of the first geom.
+        geom2 (int): The ID of the second geom.
+        distmax (float): The maximum distance before considering the contact inactive.
+
+    Properties:
+        normal (np.ndarray): The normal vector of the contact, normalized.
+        inactive (bool): Whether the contact is inactive based on the distance.
+    """
     dist: float
     fromto: np.ndarray
     geom1: int
@@ -27,11 +40,17 @@ class Contact:
 
     @property
     def normal(self) -> np.ndarray:
+        """The normal vector of the contact, normalized."""
         normal = self.fromto[3:] - self.fromto[:3]
-        return normal / (np.linalg.norm(normal) + 1e-9)
+        return mujoco.mju_normalize3(normal)
 
     @property
     def inactive(self) -> bool:
+        """Whether the contact is inactive based on the distance.
+
+        Returns:
+            bool: True if the distance is equal to distmax and fromto is not empty, False otherwise.
+        """
         return self.dist == self.distmax and not self.fromto.any()
 
 
@@ -40,6 +59,16 @@ def compute_contact_normal_jacobian(
     data: mujoco.MjData,
     contact: Contact,
 ) -> np.ndarray:
+    """Compute the contact normal Jacobian for the given contact.
+
+    Args:
+        model (mujoco.MjModel): The MuJoCo model.
+        data (mujoco.MjData): The MuJoCo data.
+        contact (Contact): The contact information.
+
+    Returns:
+        np.ndarray: The contact normal Jacobian.
+    """
     geom1_body = model.geom_bodyid[contact.geom1]
     geom2_body = model.geom_bodyid[contact.geom2]
     geom1_contact_pos = contact.fromto[:3]
@@ -48,7 +77,7 @@ def compute_contact_normal_jacobian(
     mujoco.mj_jac(model, data, jac2, None, geom2_contact_pos, geom2_body)
     jac1 = np.empty((3, model.nv))
     mujoco.mj_jac(model, data, jac1, None, geom1_contact_pos, geom1_body)
-    return contact.normal @ (jac2 - jac1)
+    return mujoco.mju_dot(contact.normal, jac2 - jac1)
 
 
 def _is_welded_together(model: mujoco.MjModel, geom_id1: int, geom_id2: int) -> bool:
@@ -97,12 +126,12 @@ class CollisionAvoidanceLimit(Limit):
     """Normal velocity limit between geom pairs.
 
     Attributes:
-        model: MuJoCo model.
-        geom_pairs: Set of collision pairs in which to perform active collision avoidance. A collision pair is defined as a pair of geom groups. A geom group is a set of geom names. For each collision pair, the mapper will attempt to compute joint velocities that avoid collisions between every geom in the first geom group with every geom in the second geom group. Self collision is achieved by adding a collision pair with the same geom group in both pair fields.
-        gain: Gain factor in (0, 1] that determines how fast the geoms are allowed to move towards each other at each iteration. Smaller values are safer but may make the geoms move slower towards each other.
-        minimum_distance_from_collisions: The minimum distance to leave between any two geoms. A negative distance allows the geoms to penetrate by the specified amount.
-        collision_detection_distance: The distance between two geoms at which the active collision avoidance limit will be active. A large value will cause collisions to be detected early, but may incur high computational cost. A negative value will cause the geoms to be detected only after they penetrate by the specified amount.
-        bound_relaxation: An offset on the upper bound of each collision avoidance constraint.
+        model (mujoco.MjModel): The MuJoCo model.
+        geom_pairs (CollisionPairs): Set of collision pairs in which to perform active collision avoidance.
+        gain (float): Gain factor in (0, 1] that determines how fast the geoms are allowed to move towards each other at each iteration.
+        minimum_distance_from_collisions (float): The minimum distance to leave between any two geoms.
+        collision_detection_distance (float): The distance between two geoms at which the active collision avoidance limit will be active.
+        bound_relaxation (float): An offset on the upper bound of each collision avoidance constraint.
     """
 
     def __init__(
@@ -117,12 +146,12 @@ class CollisionAvoidanceLimit(Limit):
         """Initialize collision avoidance limit.
 
         Args:
-            model: MuJoCo model.
-            geom_pairs: Set of collision pairs in which to perform active collision avoidance. A collision pair is defined as a pair of geom groups. A geom group is a set of geom names. For each collision pair, the mapper will attempt to compute joint velocities that avoid collisions between every geom in the first geom group with every geom in the second geom group. Self collision is achieved by adding a collision pair with the same geom group in both pair fields.
-            gain: Gain factor in (0, 1] that determines how fast the geoms are allowed to move towards each other at each iteration. Smaller values are safer but may make the geoms move slower towards each other.
-            minimum_distance_from_collisions: The minimum distance to leave between any two geoms. A negative distance allows the geoms to penetrate by the specified amount.
-            collision_detection_distance: The distance between two geoms at which the active collision avoidance limit will be active. A large value will cause collisions to be detected early, but may incur high computational cost. A negative value will cause the geoms to be detected only after they penetrate by the specified amount.
-            bound_relaxation: An offset on the upper bound of each collision avoidance constraint.
+            model (mujoco.MjModel): The MuJoCo model.
+            geom_pairs (CollisionPairs): Set of collision pairs in which to perform active collision avoidance.
+            gain (float): Gain factor in (0, 1] that determines how fast the geoms are allowed to move towards each other at each iteration.
+            minimum_distance_from_collisions (float): The minimum distance to leave between any two geoms.
+            collision_detection_distance (float): The distance between two geoms at which the active collision avoidance limit will be active.
+            bound_relaxation (float): An offset on the upper bound of each collision avoidance constraint.
         """
         self.model = model
         self.gain = gain
@@ -137,6 +166,15 @@ class CollisionAvoidanceLimit(Limit):
         configuration: Configuration,
         dt: float,
     ) -> Constraint:
+        """Compute the inequality constraints for the collision avoidance limit.
+
+        Args:
+            configuration (Configuration): The robot's configuration.
+            dt (float): Integration timestep in [s].
+
+        Returns:
+            Constraint: The inequality constraints.
+        """
         upper_bound = np.full((self.max_num_contacts,), np.inf)
         coefficient_matrix = np.zeros((self.max_num_contacts, self.model.nv))
         for idx, (geom1_id, geom2_id) in enumerate(self.geom_id_pairs):
