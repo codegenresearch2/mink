@@ -74,6 +74,8 @@ if __name__ == "__main__":
         configuration.update(data.qpos)
         mujoco.mj_forward(model, data)
 
+        ## =================== Initialize Mocap Target =================== ##
+
         mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
 
         rate = RateLimiter(frequency=500.0)
