@@ -43,7 +43,10 @@ class Contact:
         """
         assert self.fromto.size == 6, "fromto must be a 6-element array"
         normal = self.fromto[3:] - self.fromto[:3]
-        return mujoco.mju_normalize3(normal)
+        norm = np.linalg.norm(normal)
+        if norm == 0:
+            return np.zeros(3)
+        return normal / norm
 
     @property
     def inactive(self) -> bool:
