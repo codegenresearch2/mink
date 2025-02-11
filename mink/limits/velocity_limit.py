@@ -84,7 +84,6 @@ class VelocityLimit(Limit):
         Returns:
             Pair (G, h) representing the inequality constraint as G Δq ≤ h, or None if there is no limit.
         """
-        del configuration  # Unused.
         if self.projection_matrix is None:
             return Constraint()
         G = np.vstack([self.projection_matrix, -self.projection_matrix])
