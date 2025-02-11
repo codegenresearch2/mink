@@ -22,29 +22,22 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, left_subtree_id: int, right_subtree_id: int) -> None:
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int]) -> None:
     """
     Compensate for gravity by applying forces to counteract gravity for specified subtree IDs.
 
     Args:
         model (mujoco.MjModel): The MuJoCo model object.
         data (mujoco.MjData): The MuJoCo data object.
-        left_subtree_id (int): The subtree ID for the left arm.
-        right_subtree_id (int): The subtree ID for the right arm.
+        subtree_ids (list[int]): List of subtree IDs for which gravity compensation will be applied.
     """
     qfrc_applied = np.zeros_like(data.qfrc_applied)
     
-    # Compute gravity compensation for the left arm
-    left_body_ids = mujoco.mj_get_body_parentid(model, left_subtree_id, True)
-    for body_id in left_body_ids:
-        body = model.body(model.name2id(body_id))
-        qfrc_applied[body.jntadr[0]:body.jntadr[1]] = -np.array(body.mass) * model.opt.gravity
-    
-    # Compute gravity compensation for the right arm
-    right_body_ids = mujoco.mj_get_body_parentid(model, right_subtree_id, True)
-    for body_id in right_body_ids:
-        body = model.body(model.name2id(body_id))
-        qfrc_applied[body.jntadr[0]:body.jntadr[1]] = -np.array(body.mass) * model.opt.gravity
+    for subtree_id in subtree_ids:
+        body_ids = mujoco.mj_get_body_parentid(model, subtree_id, True)
+        for body_id in body_ids:
+            body = model.body(model.name2id(body_id))
+            qfrc_applied[body.jntadr[0]:body.jntadr[1]] = -np.array(body.mass) * model.opt.gravity
     
     data.qfrc_applied[:] = qfrc_applied
 
@@ -138,7 +131,7 @@ if __name__ == "__main__":
         rate = RateLimiter(frequency=200.0)
         while viewer.is_running():
             # Apply gravity compensation
-            compensate_gravity(model, data, left_subtree_id, right_subtree_id)
+            compensate_gravity(model, data, [left_subtree_id, right_subtree_id])
 
             # Update task targets.
             l_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "left/target"))
