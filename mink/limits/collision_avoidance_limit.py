@@ -6,7 +6,7 @@ between geom pairs in a MuJoCo model. It uses a gain factor to control the veloc
 and ensures that they do not collide with each other.
 """
 
-import itertools
+from dataclasses import dataclass
 from typing import List, Sequence, Union
 import mujoco
 import numpy as np
@@ -19,7 +19,6 @@ Geom = Union[int, str]
 GeomSequence = Sequence[Geom]
 CollisionPair = tuple[GeomSequence, GeomSequence]
 CollisionPairs = Sequence[CollisionPair]
-
 
 @dataclass(frozen=True)
 class _Contact:
@@ -58,7 +57,6 @@ class _Contact:
         """
         return self.dist == self.distmax and not self.fromto.any()
 
-
 def _is_welded_together(model: mujoco.MjModel, geom_id1: int, geom_id2: int) -> bool:
     """
     Returns true if the geoms are part of the same body, or if their bodies are welded together.
@@ -68,7 +66,6 @@ def _is_welded_together(model: mujoco.MjModel, geom_id1: int, geom_id2: int) -> 
     weld1 = model.body_weldid[body1]
     weld2 = model.body_weldid[body2]
     return weld1 == weld2
-
 
 def _are_geom_bodies_parent_child(
     model: mujoco.MjModel, geom_id1: int, geom_id2: int
@@ -95,7 +92,6 @@ def _are_geom_bodies_parent_child(
     cond2 = body_weldid2 == weld_parent_weldid1
     return cond1 or cond2
 
-
 def _is_pass_contype_conaffinity_check(
     model: mujoco.MjModel, geom_id1: int, geom_id2: int
 ) -> bool:
@@ -105,7 +101,6 @@ def _is_pass_contype_conaffinity_check(
     cond1 = bool(model.geom_contype[geom_id1] & model.geom_conaffinity[geom_id2])
     cond2 = bool(model.geom_contype[geom_id2] & model.geom_conaffinity[geom_id1])
     return cond1 or cond2
-
 
 class CollisionAvoidanceLimit(Limit):
     """
