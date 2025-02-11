@@ -37,7 +37,7 @@ class TestVelocityLimit(absltest.TestCase):
         """Test the indices of the velocity limit."""
         limit = VelocityLimit(self.model, self.velocities)
         expected = np.arange(6, self.model.nv)  # Freejoint (0-5) is not limited.
-        self.assertTrue(np.allclose(limit.indices, expected))
+        np.testing.assert_allclose(limit.indices, expected)
 
     def test_model_with_no_limit(self):
         """Test the behavior of VelocityLimit when no limits are defined."""
@@ -53,10 +53,9 @@ class TestVelocityLimit(absltest.TestCase):
         """Test the velocity limit with a subset of velocities."""
         limit_subset = {}
         for i, (key, value) in enumerate(self.velocities.items()):
-            if i < 3:
-                limit_subset[key] = value
-            else:
+            if i > 2:
                 break
+            limit_subset[key] = value
         limit = VelocityLimit(self.model, limit_subset)
         nb = 3
         nv = self.model.nv
