@@ -12,6 +12,7 @@ import mujoco
 import numpy as np
 
 from . import exceptions
+from .lie import SE3, SO3
 
 
 class Configuration:
