@@ -77,8 +77,8 @@ class TestConfigurationLimit(absltest.TestCase):
         self.assertEqual(len(limit.indices), nb)
         expected_indices = np.array([model.joint("hinge_limited").id])
         self.assertTrue(np.allclose(limit.indices, expected_indices))
-        expected_lower = np.array([-mujoco.mjMAXVAL, 0])
-        expected_upper = np.array([mujoco.mjMAXVAL, 1.57])
+        expected_lower = np.asarray([-mujoco.mjMAXVAL, 0])
+        expected_upper = np.asarray([mujoco.mjMAXVAL, 1.57])
         np.testing.assert_allclose(limit.lower, expected_lower)
         np.testing.assert_allclose(limit.upper, expected_upper)
 
@@ -105,8 +105,8 @@ class TestConfigurationLimit(absltest.TestCase):
         self.assertEqual(len(limit.indices), nb)
         expected_indices = np.array([model.joint("hinge").id])
         self.assertTrue(np.allclose(limit.indices, expected_indices))
-        expected_lower = np.array([-mujoco.mjMAXVAL, 0])
-        expected_upper = np.array([mujoco.mjMAXVAL, 1.57])
+        expected_lower = np.asarray([-mujoco.mjMAXVAL, 0])
+        expected_upper = np.asarray([mujoco.mjMAXVAL, 1.57])
         np.testing.assert_allclose(limit.lower, expected_lower)
         np.testing.assert_allclose(limit.upper, expected_upper)
 
