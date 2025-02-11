@@ -11,6 +11,11 @@ class TestUtils(absltest.TestCase):
         with self.assertRaises(ValueError):
             utils.skew(np.zeros((5,)))
 
+    def test_skew_equals_negative(self):
+        vec = np.random.randn(3)
+        skew_matrix = utils.skew(vec)
+        np.testing.assert_allclose(skew_matrix.T, -skew_matrix)
+
     def test_skew_with_valid_input(self):
         vec = np.array([1, 2, 3])
         expected_skew = np.array([[0, -3, 2], [3, 0, -1], [-2, 1, 0]])
