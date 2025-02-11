@@ -1,7 +1,5 @@
 """Posture task implementation."""
 
-from __future__ import annotations
-
 from typing import Optional
 
 import mujoco
@@ -33,6 +31,17 @@ class PostureTask(Task):
         gain: float = 1.0,
         lm_damping: float = 0.0,
     ):
+        """Initialize the PostureTask.
+
+        Args:
+            model: Mujoco model object.
+            cost: Cost associated with the task. Must be non-negative.
+            gain: Gain for the task.
+            lm_damping: Damping coefficient for the Levenberg-Marquardt method.
+
+        Raises:
+            TaskDefinitionError: If the cost is negative.
+        """
         if cost < 0.0:
             raise TaskDefinitionError(f"{self.__class__.__name__} cost must be >= 0")
 
@@ -58,6 +67,9 @@ class PostureTask(Task):
 
         Args:
             target_q: Desired joint configuration.
+
+        Raises:
+            InvalidTarget: If the target posture shape is incorrect.
         """
         target_q = np.atleast_1d(target_q)
         if target_q.ndim != 1 or target_q.shape[0] != (self.nq):
@@ -68,7 +80,7 @@ class PostureTask(Task):
         self.target_q = target_q.copy()
 
     def set_target_from_configuration(self, configuration: Configuration) -> None:
-        """Set the target posture from the current configuration.
+        r"""Set the target posture from the current configuration.
 
         Args:
             configuration: Robot configuration :math:`q`.
@@ -111,11 +123,7 @@ class PostureTask(Task):
     def compute_jacobian(self, configuration: Configuration) -> np.ndarray:
         r"""Compute the posture task Jacobian.
 
-        The task Jacobian is defined as:
-
-        .. math::
-
-            J(q) = I_{n_v}
+        The task Jacobian is the identity :math:`I_{n_v}`.
 
         Args:
             configuration: Robot configuration :math:`q`.
