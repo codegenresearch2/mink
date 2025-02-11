@@ -51,6 +51,9 @@ if __name__ == "__main__":
     velocity_limit = mink.VelocityLimit(model, max_velocities)
     limits.append(velocity_limit)
 
+    # Get the mocap ID for the "target" body
+    target_mocap_id = model.body("target").mocapid[0]
+
     model = configuration.model
     data = configuration.data
     solver = "quadprog"
