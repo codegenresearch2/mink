@@ -133,6 +133,7 @@ if __name__ == "__main__":
         t = 0.0  # Initialize t before the main loop
         while viewer.is_running():
             rate.sleep()  # Ensure RateLimiter is used within the loop
+            t += rate.dt  # Update t after sleeping
             data.mocap_pos[base_mid][2] = 0.3 * np.sin(2.0 * t)
             base_task.set_target(mink.SE3.from_mocap_name(model, data, "base_target"))
 
@@ -149,4 +150,3 @@ if __name__ == "__main__":
             mujoco.mj_camlight(model, data)
 
             viewer.sync()
-            t += rate.dt
