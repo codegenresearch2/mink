@@ -37,18 +37,18 @@ class ComTask(Task):
         """Set the cost for the CoM task.
 
         Args:
-            cost: Cost vector for the CoM task, must be a vector of shape (3,).
+            cost: Cost vector for the CoM task, must be a vector of shape (3,) or a scalar that can be broadcasted to shape (3,).
 
         Raises:
             TaskDefinitionError: If the cost is not a vector of shape (3,) or if it contains negative values.
         """
         cost = np.atleast_1d(cost)
-        if cost.ndim != 1 or cost.shape[0] != self.k:
+        if cost.ndim != 1 or cost.shape[0] not in (1, self.k):
             raise TaskDefinitionError(
-                f"Cost must be a vector of shape ({self.k},) but got {cost.shape}"
+                f"Cost must be a vector of shape ({self.k},) or a scalar. Got {cost.shape}"
             )
         if not np.all(cost >= 0):
-            raise TaskDefinitionError("Cost values must be non-negative")
+            raise TaskDefinitionError(f"Cost values must be non-negative. Got {cost}")
         self.cost[:] = cost
 
     def set_target(self, target_com: npt.ArrayLike) -> None:
