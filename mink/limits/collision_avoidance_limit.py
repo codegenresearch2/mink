@@ -29,7 +29,7 @@ class Contact:
         distmax (float): The maximum distance before considering the contact inactive.
 
     Properties:
-        normal (np.ndarray): The normal vector of the contact, normalized.
+        normal (np.ndarray): The normal vector of the contact, pointing from geom1 to geom2.
         inactive (bool): Whether the contact is inactive based on the distance.
     """
     dist: float
@@ -40,9 +40,13 @@ class Contact:
 
     @property
     def normal(self) -> np.ndarray:
-        """The normal vector of the contact, normalized."""
+        """The normal vector of the contact, pointing from geom1 to geom2."""
+        if self.fromto.size == 0:
+            raise ValueError("fromto array is empty")
         normal = self.fromto[3:] - self.fromto[:3]
-        return mujoco.mju_normalize3(normal)
+        if normal.size != 3:
+            raise ValueError("normal vector must have exactly 3 elements")
+        return normal / np.linalg.norm(normal)
 
     @property
     def inactive(self) -> bool:
@@ -51,7 +55,7 @@ class Contact:
         Returns:
             bool: True if the distance is equal to distmax and fromto is not empty, False otherwise.
         """
-        return self.dist == self.distmax and not self.fromto.any()
+        return self.dist == self.distmax and self.fromto.size != 0
 
 
 def compute_contact_normal_jacobian(
