@@ -11,7 +11,7 @@ with open("pyproject.toml", "r") as file:
     pyproject = toml.load(file)
 
 project = pyproject["project"]["name"]
-copyright = "2024, Kevin Zakka"
+version = pyproject["project"]["version"]
 author = pyproject["project"]["authors"][0]["name"]
 
 # -- General configuration ---------------------------------------------------
