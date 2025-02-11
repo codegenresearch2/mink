@@ -57,7 +57,7 @@ if __name__ == "__main__":
             orientation_cost=1.0,
             lm_damping=1.0,
         ),
-        posture_task := mink.PostureTask(model=model, cost=0.1),
+        posture_task := mink.PostureTask(model=model, cost=1e-4),  # Adjust the cost to match the gold code
     ]
 
     # Enable collision avoidance between the following geoms:
