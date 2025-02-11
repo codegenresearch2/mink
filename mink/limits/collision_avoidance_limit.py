@@ -41,6 +41,7 @@ class Contact:
         Returns:
             np.ndarray: The normalized normal vector.
         """
+        assert self.fromto.size == 6, "fromto must be a 6-element array"
         normal = self.fromto[3:] - self.fromto[:3]
         return mujoco.mju_normalize3(normal)
 
