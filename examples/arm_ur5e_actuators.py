@@ -60,6 +60,9 @@ if __name__ == "__main__":
     ori_threshold = 1e-4
     max_iters = 20
 
+    # Initialize the mocap target at the end-effector site.
+    mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
+
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
     ) as viewer:
@@ -68,9 +71,6 @@ if __name__ == "__main__":
         mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
         configuration.update(data.qpos)
         mujoco.mj_forward(model, data)
-
-        # Initialize the mocap target at the end-effector site.
-        mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
 
         rate = RateLimiter(frequency=500.0)
         while viewer.is_running():
