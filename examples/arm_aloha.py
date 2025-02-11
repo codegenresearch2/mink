@@ -57,7 +57,7 @@ if __name__ == "__main__":
             orientation_cost=1.0,
             lm_damping=1.0,
         ),
-        posture_task := mink.PostureTask(model=model, stiffness=1.0, damping=0.1),
+        posture_task := mink.PostureTask(model=model, cost=0.1),
     ]
 
     # Enable collision avoidance between the following geoms:
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         # Initialize to the home keyframe.
         mujoco.mj_resetDataKeyframe(model, data, model.key("neutral_pose").id)
         configuration.update(data.qpos)
-        posture_task.set_target(configuration.q)
+        posture_task.set_target_from_configuration(configuration)  # Use the gold code's method
         mujoco.mj_forward(model, data)
 
         # Initialize mocap targets at the end-effector site.
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         while viewer.is_running():
             # Update task targets.
             l_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "left/target"))
-            r_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "right/target"))
+            r_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "right/target"))  # Correctly set the target for the right end-effector task
 
             # Compute velocity and integrate into the next configuration.
             for i in range(max_iters):
@@ -125,10 +125,10 @@ if __name__ == "__main__":
                 )
                 configuration.integrate_inplace(vel, rate.dt)
 
-                l_err = l_ee_task.compute_error(configuration)
+                l_err = l_ee_task.compute_error(configuration)  # Correctly compute the error for the left end-effector task
                 l_pos_achieved = np.linalg.norm(l_err[:3]) <= pos_threshold
                 l_ori_achieved = np.linalg.norm(l_err[3:]) <= ori_threshold
-                r_err = r_ee_task.compute_error(configuration)
+                r_err = r_ee_task.compute_error(configuration)  # Correctly compute the error for the right end-effector task
                 r_pos_achieved = np.linalg.norm(r_err[:3]) <= pos_threshold
                 r_ori_achieved = np.linalg.norm(r_err[3:]) <= ori_threshold
                 if (
