@@ -62,10 +62,10 @@ if __name__ == "__main__":
 
     # IK settings.
     solver = "quadprog"
+    damping = 1e-3  # Defined directly in the function call.
     pos_threshold = 1e-4
     ori_threshold = 1e-4
     max_iters = 20
-    damping = 1e-3  # Defined directly in the function call.
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
