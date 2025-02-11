@@ -9,13 +9,11 @@ import numpy as np
 from .base import MatrixLieGroup
 from .utils import get_epsilon, skew
 
-_IDENTITIY_WXYZ = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
+_IDENTITY_WXYZ = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
 _INVERT_QUAT_SIGN = np.array([1.0, -1.0, -1.0, -1.0], dtype=np.float64)
 
 
 class RollPitchYaw(NamedTuple):
-    """Struct containing roll, pitch, and yaw Euler angles."""
-
     roll: float
     pitch: float
     yaw: float
@@ -38,7 +36,7 @@ class SO3(MatrixLieGroup):
     def __post_init__(self) -> None:
         if self.wxyz.shape != (self.parameters_dim,):
             raise ValueError(
-                f"Expeced wxyz to be a length 4 vector but got {self.wxyz.shape[0]}."
+                f"Expected wxyz to be a length 4 vector but got {self.wxyz.shape[0]}."
             )
 
     def __repr__(self) -> str:
@@ -53,15 +51,15 @@ class SO3(MatrixLieGroup):
 
     @classmethod
     def from_x_radians(cls, theta: float) -> SO3:
-        return SO3.exp(np.array([theta, 0.0, 0.0], dtype=np.float64))
+        return cls.exp(np.array([theta, 0.0, 0.0], dtype=np.float64))
 
     @classmethod
     def from_y_radians(cls, theta: float) -> SO3:
-        return SO3.exp(np.array([0.0, theta, 0.0], dtype=np.float64))
+        return cls.exp(np.array([0.0, theta, 0.0], dtype=np.float64))
 
     @classmethod
     def from_z_radians(cls, theta: float) -> SO3:
-        return SO3.exp(np.array([0.0, 0.0, theta], dtype=np.float64))
+        return cls.exp(np.array([0.0, 0.0, theta], dtype=np.float64))
 
     @classmethod
     def from_rpy_radians(
@@ -71,9 +69,9 @@ class SO3(MatrixLieGroup):
         yaw: float,
     ) -> SO3:
         return (
-            SO3.from_z_radians(yaw)
-            @ SO3.from_y_radians(pitch)
-            @ SO3.from_x_radians(roll)
+            cls.from_z_radians(yaw)
+            @ cls.from_y_radians(pitch)
+            @ cls.from_x_radians(roll)
         )
 
     @classmethod
@@ -85,7 +83,7 @@ class SO3(MatrixLieGroup):
 
     @classmethod
     def identity(cls) -> SO3:
-        return SO3(wxyz=_IDENTITIY_WXYZ)
+        return SO3(wxyz=_IDENTITY_WXYZ)
 
     @classmethod
     def sample_uniform(cls) -> SO3:
