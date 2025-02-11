@@ -19,8 +19,7 @@ class TestVelocityLimit(absltest.TestCase):
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("home")  # Changed to "home" as per feedback
-        # NOTE(kevin): These velocities are arbitrary and do not match real hardware.
+        self.configuration.update_from_keyframe("stand")  # Updated to "stand"
         self.velocities = {
             self.model.joint(i).name: 3.14 for i in range(1, self.model.njnt)
         }
