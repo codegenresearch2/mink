@@ -15,8 +15,6 @@ from .limit import Constraint, Limit
 class VelocityLimit(Limit):
     """Inequality constraint on joint velocities in a robot model.
 
-    Floating base joints are ignored.
-
     Attributes:
         indices (np.ndarray): Tangent indices corresponding to velocity-limited joints.
         limit (np.ndarray): Maximum allowed velocity magnitude for velocity-limited joints, in [m]/[s] for slide joints and [rad]/[s] for hinge joints.
@@ -44,7 +42,7 @@ class VelocityLimit(Limit):
             jid = model.joint(joint_name).id
             jnt_type = model.jnt_type[jid]
             vdim = dof_width(jnt_type)
-            vad = model.jnt_dofadr[jid]
+            vadr = model.jnt_dofadr[jid]
             if jnt_type == mujoco.mjtJoint.mjJNT_FREE:
                 raise LimitDefinitionError(f"Free joint {joint_name} is not supported")
             max_vel = np.atleast_1d(max_vel)
@@ -52,7 +50,7 @@ class VelocityLimit(Limit):
                 raise LimitDefinitionError(
                     f"Joint {joint_name} must have a limit of shape ({vdim},). Got: {max_vel.shape}"
                 )
-            index_list.extend(range(vad, vad + vdim))
+            index_list.extend(range(vadr, vadr + vdim))
             limit_list.extend(max_vel.tolist())
 
         self.indices = np.array(index_list)
