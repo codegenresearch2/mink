@@ -131,7 +131,7 @@ if __name__ == "__main__":
             model, data, "r_target", "r_iiwa/attachment_site", "site"
         )
 
-        rate = RateLimiter(frequency=60.0, warn=True)  # Added warning option
+        rate = RateLimiter(frequency=60.0, warn=False)  # Adjusted to match gold code
         t = 0.0
         while viewer.is_running():
             mu = (1 + np.cos(t)) / 2
