@@ -28,8 +28,8 @@ class TestUtils(absltest.TestCase):
 
     def test_skew_with_large_input(self):
         vec = np.random.randn(10)
-        skew_matrix = utils.skew(vec)
-        self.assertEqual(skew_matrix.shape, (3, 3))
+        with self.assertRaises(ValueError):
+            utils.skew(vec)
 
     def test_skew_with_negative_input(self):
         vec = -np.random.randn(3)
