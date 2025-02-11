@@ -76,8 +76,10 @@ class TestConfigurationLimit(absltest.TestCase):
         nv = model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
-        np.testing.assert_allclose(limit.lower, -mujoco.mjMAXVAL)
-        np.testing.assert_allclose(limit.upper, mujoco.mjMAXVAL)
+        expected_lower = -mujoco.mjMAXVAL * np.ones(nb)
+        np.testing.assert_allclose(limit.lower, expected_lower)
+        expected_upper = mujoco.mjMAXVAL * np.ones(nb)
+        np.testing.assert_allclose(limit.upper, expected_upper)
 
     def test_freejoint_ignored(self):
         xml_str = """
@@ -101,8 +103,10 @@ class TestConfigurationLimit(absltest.TestCase):
         nv = model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
-        np.testing.assert_allclose(limit.lower, -mujoco.mjMAXVAL)
-        np.testing.assert_allclose(limit.upper, mujoco.mjMAXVAL)
+        expected_lower = -mujoco.mjMAXVAL * np.ones(nb)
+        np.testing.assert_allclose(limit.lower, expected_lower)
+        expected_upper = mujoco.mjMAXVAL * np.ones(nb)
+        np.testing.assert_allclose(limit.upper, expected_upper)
 
     def test_far_from_limit(self, tol=1e-10):
         """Limit has no effect when the configuration is far away."""
