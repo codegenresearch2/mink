@@ -37,7 +37,9 @@ class TestConfiguration(absltest.TestCase):
         np.testing.assert_array_equal(configuration.q, qpos)
 
     def test_site_transform_world_frame(self):
+        """Test site transform to world frame."""
         site_name = "attachment_site"
+        np.random.seed(12345)  # Set seed for reproducibility
         qpos = np.random.uniform(*self.model.jnt_range.T)
         configuration = mink.Configuration(self.model)
         configuration.update(q=qpos)
