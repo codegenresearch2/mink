@@ -66,7 +66,8 @@ if __name__ == "__main__":
     ori_threshold = 1e-4
     max_iters = 20
 
-    rate = RateLimiter(frequency=500.0, warn=False)  # Adjusted to match gold standard
+    # Initialize the RateLimiter right before the while loop
+    rate = RateLimiter(frequency=500.0, warn=False)
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
