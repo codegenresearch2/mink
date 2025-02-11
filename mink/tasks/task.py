@@ -23,7 +23,10 @@ class Objective(NamedTuple):
 
 
 class Task(abc.ABC):
-    """Abstract base class for kinematic tasks."""
+    """Abstract base class for kinematic tasks.
+
+    This class defines the structure for all kinematic tasks. Each task must be able to compute its error and Jacobian with respect to the robot's configuration.
+    """
 
     def __init__(
         self,
@@ -31,7 +34,7 @@ class Task(abc.ABC):
         gain: float = 1.0,
         lm_damping: float = 0.0,
     ):
-        """Constructor.
+        """Constructor for the Task class.
 
         Args:
             cost: Cost vector with the same dimension as the error of the task.
