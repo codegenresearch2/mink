@@ -41,8 +41,8 @@ class ConfigurationLimit(Limit):
             )
 
         index_list: list[int] = []  # DoF indices that are limited.
-        lower = np.full(model.nq, -np.inf)
-        upper = np.full(model.nq, np.inf)
+        lower = np.full(model.nq, -mujoco.mjMAXVAL)
+        upper = np.full(model.nq, mujoco.mjMAXVAL)
         for jnt in range(model.njnt):
             jnt_type = model.jnt_type[jnt]
             qpos_dim = qpos_width(jnt_type)
@@ -58,7 +58,6 @@ class ConfigurationLimit(Limit):
         self.indices = np.array(index_list)
         self.indices.setflags(write=False)
 
-        # Ensure indices are within valid bounds for projection_matrix
         if not self.indices.size:
             raise ValueError("No limited joints found.")
 
@@ -98,8 +97,7 @@ class ConfigurationLimit(Limit):
             Pair :math:`(G, h)` representing the inequality constraint as
             :math:`G \Delta q \leq h`, or ``None`` if there is no limit.
         """
-        # dt is unused in this implementation.
-        del dt
+        del dt  # Unused.
 
         if self.projection_matrix is None:
             return Constraint()
