@@ -18,11 +18,9 @@ class VelocityLimit(Limit):
     Floating base joints are ignored.
 
     Attributes:
-        indices: Tangent indices corresponding to velocity-limited joints.
-        limit: Maximum allowed velocity magnitude for velocity-limited joints, in
-            [m]/[s] for slide joints and [rad]/[s] for hinge joints.
-        projection_matrix: Projection from tangent space to subspace with
-            velocity-limited joints.
+        indices (np.ndarray): Tangent indices corresponding to velocity-limited joints.
+        limit (np.ndarray): Maximum allowed velocity magnitude for velocity-limited joints, in [m]/[s] for slide joints and [rad]/[s] for hinge joints.
+        projection_matrix (np.ndarray): Projection from tangent space to subspace with velocity-limited joints.
     """
 
     indices: np.ndarray
@@ -37,9 +35,8 @@ class VelocityLimit(Limit):
         """Initialize velocity limits.
 
         Args:
-            model: MuJoCo model.
-            velocities: Dictionary mapping joint name to maximum allowed magnitude in
-                [m]/[s] for slide joints and [rad]/[s] for hinge joints.
+            model (mujoco.MjModel): MuJoCo model.
+            velocities (Mapping[str, npt.ArrayLike]): Dictionary mapping joint name to maximum allowed magnitude in [m]/[s] for slide joints and [rad]/[s] for hinge joints.
         """
         limit_list: list[float] = []
         index_list: list[int] = []
@@ -53,8 +50,7 @@ class VelocityLimit(Limit):
             max_vel = np.atleast_1d(max_vel)
             if max_vel.shape != (jnt_dim,):
                 raise LimitDefinitionError(
-                    f"Joint {joint_name} must have a limit of shape ({jnt_dim},). "
-                    f"Got: {max_vel.shape}"
+                    f"Joint {joint_name} must have a limit of shape ({jnt_dim},). Got: {max_vel.shape}"
                 )
             index_list.extend(range(jnt_id, jnt_id + jnt_dim))
             limit_list.extend(max_vel.tolist())
@@ -78,19 +74,16 @@ class VelocityLimit(Limit):
 
             -v_{\text{max}} \cdot dt \leq \Delta q \leq v_{\text{max}} \cdot dt
 
-        where :math:`v_{max} \in {\cal T}` is the robot's velocity limit
-        vector and :math:`\Delta q \in T_q({\cal C})` is the displacement in the
-        tangent space at :math:`q`. See the :ref:`derivations` section for
-        more information.
+        where :math:`v_{max} \in {\cal T}` is the robot's velocity limit vector and :math:`\Delta q \in T_q({\cal C})` is the displacement in the tangent space at :math:`q`.
 
         Args:
-            configuration: Robot configuration :math:`q`.
-            dt: Integration timestep in [s].
+            configuration (Configuration): Robot configuration :math:`q`. Unused in this method.
+            dt (float): Integration timestep in [s].
 
         Returns:
-            Pair :math:`(G, h)` representing the inequality constraint as
-            :math:`G \Delta q \leq h`, or ``None`` if there is no limit.
+            Pair :math:`(G, h)` representing the inequality constraint as :math:`G \Delta q \leq h`, or ``None`` if there is no limit.
         """
+        del configuration  # Unused.
         if self.projection_matrix is None:
             return Constraint()
         G = np.vstack([self.projection_matrix, -self.projection_matrix])
