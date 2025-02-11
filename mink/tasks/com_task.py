@@ -1,7 +1,5 @@
 """Center-of-mass task implementation."""
 
-from __future__ import annotations
-
 from typing import Optional
 
 import mujoco
@@ -17,7 +15,7 @@ class ComTask(Task):
     """Regulate the center-of-mass (CoM) of a robot.
 
     Attributes:
-        target_com: Target position of the CoM.
+        target_com (Optional[np.ndarray]): Target position of the CoM.
     """
 
     k: int = 3
@@ -35,6 +33,7 @@ class ComTask(Task):
         self.set_cost(cost)
 
     def set_cost(self, cost: npt.ArrayLike) -> None:
+        """Set a new cost for all CoM coordinates."""
         cost = np.atleast_1d(cost)
         if cost.ndim != 1 or cost.shape[0] not in (1, self.k):
             raise TaskDefinitionError(
@@ -50,7 +49,7 @@ class ComTask(Task):
         """Set the target CoM position in the world frame.
 
         Args:
-            target_com: Desired center-of-mass position in the world frame.
+            target_com (npt.ArrayLike): Desired center-of-mass position in the world frame.
         """
         target_com = np.atleast_1d(target_com)
         if target_com.ndim != 1 or target_com.shape[0] != (self.k):
@@ -64,31 +63,41 @@ class ComTask(Task):
         """Set the target CoM from a given robot configuration.
 
         Args:
-            configuration: Robot configuration :math:`q`.
+            configuration (Configuration): Robot configuration :math:`q`.
         """
         self.set_target(configuration.data.subtree_com[1])
 
     def compute_error(self, configuration: Configuration) -> np.ndarray:
-        """Compute the CoM task error.
+        r"""Compute the CoM task error.
+
+        The error is defined as:
+
+        .. math::
+
+            e(q) = c^* - c
 
         Args:
-            configuration: Robot configuration :math:`q`.
+            configuration (Configuration): Robot configuration :math:`q`.
 
         Returns:
-            Center-of-mass task error vector :math:`e(q)`.
+            np.ndarray: Center-of-mass task error vector :math:`e(q)`.
         """
         if self.target_com is None:
             raise TargetNotSet(self.__class__.__name__)
         return configuration.data.subtree_com[1] - self.target_com
 
     def compute_jacobian(self, configuration: Configuration) -> np.ndarray:
-        """Compute the CoM task Jacobian.
+        r"""Compute the CoM task Jacobian.
+
+        The task Jacobian :math:`J(q) \in \mathbb{R}^{3 \times n_v}` is the
+        derivative of the CoM position with respect to the current configuration
+        :math:`q`.
 
         Args:
-            configuration: Robot configuration :math:`q`.
+            configuration (Configuration): Robot configuration :math:`q`.
 
         Returns:
-            Center-of-mass task jacobian :math:`J(q)`.
+            np.ndarray: Center-of-mass task jacobian :math:`J(q)`.
         """
         if self.target_com is None:
             raise TargetNotSet(self.__class__.__name__)
