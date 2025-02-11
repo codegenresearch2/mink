@@ -71,4 +71,4 @@ def custom_configuration_vector(
     return q
 
 
-This revised code snippet addresses the feedback by removing the invalid syntax in the comment, ensuring that the function names and structure are consistent, and adding comprehensive docstrings to improve readability and maintainability.
+This revised code snippet addresses the feedback by removing the invalid syntax in the comments, ensuring that the function names and structure are consistent, and adding comprehensive docstrings to improve readability and maintainability.
