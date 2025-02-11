@@ -22,7 +22,7 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int]) -> None:
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int], qfrc_applied: np.ndarray = None) -> None:
     """
     Compensate for gravity by applying forces to counteract gravity for specified subtree IDs.
 
@@ -30,8 +30,10 @@ def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: 
         model (mujoco.MjModel): The MuJoCo model object.
         data (mujoco.MjData): The MuJoCo data object.
         subtree_ids (list[int]): List of subtree IDs for which gravity compensation will be applied.
+        qfrc_applied (np.ndarray, optional): Array to store the applied forces. If None, a new array will be created.
     """
-    qfrc_applied = np.zeros_like(data.qfrc_applied)
+    if qfrc_applied is None:
+        qfrc_applied = np.zeros_like(data.qfrc_applied)
     
     for subtree_id in subtree_ids:
         body_ids = mujoco.mj_get_body_parentid(model, subtree_id, True)
@@ -130,9 +132,6 @@ if __name__ == "__main__":
 
         rate = RateLimiter(frequency=200.0)
         while viewer.is_running():
-            # Apply gravity compensation
-            compensate_gravity(model, data, [left_subtree_id, right_subtree_id])
-
             # Update task targets.
             l_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "left/target"))
             r_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "right/target"))
@@ -162,6 +161,9 @@ if __name__ == "__main__":
                     and r_ori_achieved
                 ):
                     break
+
+            # Apply gravity compensation
+            compensate_gravity(model, data, [left_subtree_id, right_subtree_id])
 
             data.ctrl[actuator_ids] = configuration.q[dof_ids]
             mujoco.mj_step(model, data)
