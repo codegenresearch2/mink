@@ -40,12 +40,16 @@ class ComTask(Task):
             cost: Cost vector for the CoM task, must be a vector of shape (1,) or (3,).
 
         Raises:
-            TaskDefinitionError: If the cost is not a vector of shape (1,) or (3,).
+            TaskDefinitionError: If the cost is not a vector of shape (1,) or (3,), or if any value in the cost vector is negative.
         """
         cost = np.atleast_1d(cost)
         if cost.ndim != 1 or cost.shape[0] not in (1, self.k):
             raise TaskDefinitionError(
-                f"Cost must be a vector of shape (1,) or (3,). Got {cost.shape}"
+                f"ComTask cost must be a vector of shape (1,) or ({self.k},). Got {cost.shape}"
+            )
+        if not np.all(cost >= 0):
+            raise TaskDefinitionError(
+                f"ComTask cost must be non-negative. Got {cost}"
             )
         self.cost[:] = cost
 
