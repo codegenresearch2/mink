@@ -30,6 +30,13 @@ class Configuration:
     In this context, a frame refers to a coordinate system that can be attached to
     different elements of the robot model. Currently supported frames include
     `body`, `geom` and `site`.
+
+    Key functionalities:
+        - Running forward kinematics to update the state.
+        - Checking configuration limits.
+        - Computing Jacobians for different frames.
+        - Retrieving frame transforms relative to the world frame.
+        - Integrating velocities to update configurations.
     """
 
     def __init__(
@@ -46,7 +53,14 @@ class Configuration:
         """
         self.model = model
         self.data = mujoco.MjData(model)
-        self.update(q=q)
+        if q is None:
+            self.data.qpos = model.qpos0
+        else:
+            self.data.qpos = q
+        # The minimal function call required to get updated frame transforms is
+        # mj_kinematics. An extra call to mj_comPos is required for updated Jacobians.
+        mujoco.mj_kinematics(self.model, self.data)
+        mujoco.mj_comPos(self.model, self.data)
 
     def update(self, q: Optional[np.ndarray] = None) -> None:
         """Run forward kinematics.
@@ -89,7 +103,7 @@ class Configuration:
             ):
                 continue
             padr = self.model.jnt_qposadr[jnt]
-            qval = self.q[padr]
+            qval = self.data.qpos[padr]
             qmin = self.model.jnt_range[jnt, 0]
             qmax = self.model.jnt_range[jnt, 1]
             if qval < qmin - tol or qval > qmax + tol:
