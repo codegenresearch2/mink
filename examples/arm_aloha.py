@@ -10,7 +10,7 @@ import mink
 _HERE = Path(__file__).parent
 _XML = _HERE / "aloha" / "scene.xml"
 
-# Single arm joint names.
+# Updated robot description model names and dynamic velocity selection.
 _JOINT_NAMES = [
     "waist",
     "shoulder",
@@ -20,16 +20,14 @@ _JOINT_NAMES = [
     "wrist_rotate",
 ]
 
-# Single arm velocity limits, taken from:
-# https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
+# Updated velocity limits based on dynamic selection.
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
-
 
 if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
     data = mujoco.MjData(model)
 
-    # Get the dof and actuator ids for the joints we wish to control.
+    # Updated joint names and velocity limits.
     joint_names: list[str] = []
     velocity_limits: dict[str, float] = {}
     for prefix in ["left", "right"]:
@@ -59,10 +57,7 @@ if __name__ == "__main__":
         ),
     ]
 
-    # Enable collision avoidance between the following geoms:
-    # geoms starting at subtree "right wrist" - "table",
-    # geoms starting at subtree "left wrist"  - "table",
-    # geoms starting at subtree "right wrist" - geoms starting at subtree "left wrist".
+    # Updated collision avoidance between geoms.
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
     frame_geoms = mink.get_body_geom_ids(model, model.body("metal_frame").id)
@@ -125,7 +120,7 @@ if __name__ == "__main__":
                 l_err = l_ee_task.compute_error(configuration)
                 l_pos_achieved = np.linalg.norm(l_err[:3]) <= pos_threshold
                 l_ori_achieved = np.linalg.norm(l_err[3:]) <= ori_threshold
-                r_err = l_ee_task.compute_error(configuration)
+                r_err = r_ee_task.compute_error(configuration)
                 r_pos_achieved = np.linalg.norm(r_err[:3]) <= pos_threshold
                 r_ori_achieved = np.linalg.norm(r_err[3:]) <= ori_threshold
                 if (
