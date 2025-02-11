@@ -1,5 +1,3 @@
-"""mink: MuJoCo inverse kinematics."""
-
 from pathlib import Path
 
 import mujoco
@@ -9,6 +7,7 @@ from loop_rate_limiters import RateLimiter
 
 import mink
 
+# Constants and configurations
 _HERE = Path(__file__).parent
 _ARM_XML = _HERE / "kuka_iiwa_14" / "scene.xml"
 _HAND_XML = _HERE / "wonik_allegro" / "left_hand.xml"
@@ -27,6 +26,7 @@ HOME_QPOS = [
 ]
 # fmt: on
 
+# Function to construct the model
 def construct_model():
     arm_mjcf = mjcf.from_path(_ARM_XML.as_posix())
     arm_mjcf.find("key", "home").remove()
@@ -55,7 +55,8 @@ def construct_model():
         arm_mjcf.to_xml_string(), arm_mjcf.get_assets()
     )
 
-def main():
+# Main execution block
+if __name__ == "__main__":
     model = construct_model()
 
     configuration = mink.Configuration(model)
@@ -89,7 +90,7 @@ def main():
         mink.ConfigurationLimit(model=model),
     ]
 
-    # IK settings.
+    # IK settings
     solver = "quadprog"
     model = configuration.model
     data = configuration.data
@@ -103,7 +104,7 @@ def main():
         configuration.update(data.qpos)
         posture_task.set_target_from_configuration(configuration)
 
-        # Initialize the mocap target at the end-effector site.
+        # Initialize the mocap target at the end-effector site
         mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
         for finger in fingers:
             mink.move_mocap_to_frame(
@@ -116,11 +117,11 @@ def main():
 
         rate = RateLimiter(frequency=100.0)
         while viewer.is_running():
-            # Update kuka end-effector task.
+            # Update kuka end-effector task
             T_wt = mink.SE3.from_mocap_name(model, data, "target")
             end_effector_task.set_target(T_wt)
 
-            # Update finger tasks.
+            # Update finger tasks
             for finger, task in zip(fingers, finger_tasks):
                 T_pm = configuration.get_transform(
                     f"{finger}_target", "body", "allegro_left/palm", "body"
@@ -141,7 +142,7 @@ def main():
                     T_w_mocap_new.rotation().wxyz
                 )
 
-            # Compute velocity and integrate into the next configuration.
+            # Compute velocity and integrate into the next configuration
             vel = mink.solve_ik(
                 configuration, tasks, rate.dt, solver, 1e-3, limits=limits
             )
@@ -150,9 +151,6 @@ def main():
 
             T_eef_prev = T_eef.copy()
 
-            # Visualize at fixed FPS.
+            # Visualize at fixed FPS
             viewer.sync()
             rate.sleep()
-
-if __name__ == "__main__":
-    main()
