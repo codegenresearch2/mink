@@ -21,9 +21,9 @@ class TestConfigurationLimit(absltest.TestCase):
     def setUp(self):
         self.configuration = Configuration(self.model)
         self.configuration.update_from_keyframe("stand")
-        # Update keyframe to 'stand' and account for free joint dimensions.
+        # Arbitrary velocities used for testing purposes.
         self.velocities = {
-            self.model.joint(i).name: mujoco.mjMAXVAL for i in range(1, self.model.njnt)
+            self.model.joint(i).name: 3.14 for i in range(1, self.model.njnt)
         }
         self.vel_limit = VelocityLimit(self.model, self.velocities)
 
@@ -50,6 +50,9 @@ class TestConfigurationLimit(absltest.TestCase):
         empty_bounded = ConfigurationLimit(empty_model)
         self.assertEqual(len(empty_bounded.indices), 0)
         self.assertIsNone(empty_bounded.projection_matrix)
+        G, h = empty_bounded.compute_qp_inequalities(self.configuration, 1e-3)
+        self.assertIsNone(G)
+        self.assertIsNone(h)
 
     def test_model_with_subset_of_velocities_limited(self):
         xml_str = """
@@ -72,6 +75,9 @@ class TestConfigurationLimit(absltest.TestCase):
         nv = model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
+        # Assert expected limits
+        self.assertTrue(np.allclose(limit.lower, -np.pi))
+        self.assertTrue(np.allclose(limit.upper, np.pi))
 
     def test_freejoint_ignored(self):
         xml_str = """
@@ -94,6 +100,9 @@ class TestConfigurationLimit(absltest.TestCase):
         nv = model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
+        # Assert expected limits
+        self.assertTrue(np.allclose(limit.lower, -np.pi))
+        self.assertTrue(np.allclose(limit.upper, np.pi))
 
     def test_far_from_limit(self, tol=1e-10):
         """Limit has no effect when the configuration is far away."""
