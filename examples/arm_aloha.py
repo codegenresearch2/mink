@@ -53,7 +53,7 @@ def compensate_gravity(
 
 
 if __name__ == "__main__":
-    model = mujoco.MjModel.from_xml_path(_XML.as_posix())
+    model = mujoco.MjModel.from_xml_path(str(_XML))
     data = mujoco.MjData(model)
 
     # Bodies for which to apply gravity compensation.
