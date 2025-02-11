@@ -6,7 +6,7 @@ between geom pairs in a MuJoCo model. It uses a gain factor to control the veloc
 and ensures that they do not collide with each other.
 """
 
-import itertools
+from dataclasses import dataclass
 from typing import List, Sequence, Union
 import mujoco
 import numpy as np
@@ -244,6 +244,14 @@ class CollisionAvoidanceLimit(Limit):
     def _construct_geom_id_pairs(self, geom_pairs):
         """
         Returns a set of geom ID pairs for all possible geom-geom collisions.
+
+        The contacts are added based on the following heuristics:
+            1) Geoms that are part of the same body or weld are not included.
+            2) Geoms where the body of one geom is a parent of the body of the other geom are not included.
+            3) Geoms that fail the contype-conaffinity check are ignored.
+
+        Note:
+            1) If two bodies are kinematically welded together (no joints between them) they are considered to be the same body within this function.
         """
         geom_id_pairs = []
         for id_pair in self._collision_pairs_to_geom_id_pairs(geom_pairs):
