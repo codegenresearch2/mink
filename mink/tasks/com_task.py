@@ -1,5 +1,6 @@
 """Center-of-mass task implementation."""
 
+from __future__ import annotations
 from typing import Optional
 
 import mujoco
@@ -33,7 +34,11 @@ class ComTask(Task):
         self.set_cost(cost)
 
     def set_cost(self, cost: npt.ArrayLike) -> None:
-        """Set a new cost for all CoM coordinates."""
+        """Set a new cost for all CoM coordinates.
+
+        Args:
+            cost (npt.ArrayLike): The new cost for the CoM coordinates.
+        """
         cost = np.atleast_1d(cost)
         if cost.ndim != 1 or cost.shape[0] not in (1, self.k):
             raise TaskDefinitionError(
