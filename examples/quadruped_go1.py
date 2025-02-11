@@ -36,7 +36,7 @@ if __name__ == "__main__":
         )
         feet_tasks.append(task)
 
-    tasks = [base_task, posture_task] + feet_tasks
+    tasks = [base_task, posture_task, *feet_tasks]
 
     base_mid = model.body("trunk_target").mocapid[0]
     feet_mid = [model.body(f"{foot}_target").mocapid[0] for foot in feet]
@@ -59,7 +59,7 @@ if __name__ == "__main__":
             mink.move_mocap_to_frame(model, data, f"{foot}_target", foot, "site")
         mink.move_mocap_to_frame(model, data, "trunk_target", "trunk", "body")
 
-        rate_limiter = RateLimiter(frequency=500.0)
+        rate = RateLimiter(frequency=500.0, warn=False)
         while viewer.is_running():
             # Update task targets.
             base_task.set_target(mink.SE3.from_mocap_id(data, base_mid))
@@ -67,10 +67,10 @@ if __name__ == "__main__":
                 task.set_target(mink.SE3.from_mocap_id(data, feet_mid[i]))
 
             # Compute velocity, integrate and set control signal.
-            vel = mink.solve_ik(configuration, tasks, rate_limiter.dt, solver, 1e-5)
-            configuration.integrate_inplace(vel, rate_limiter.dt)
+            vel = mink.solve_ik(configuration, tasks, rate.dt, solver, 1e-5)
+            configuration.integrate_inplace(vel, rate.dt)
             mujoco.mj_camlight(model, data)
 
             # Visualize at fixed FPS.
             viewer.sync()
-            rate_limiter.sleep()
+            rate.sleep()
