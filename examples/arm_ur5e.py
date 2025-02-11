@@ -51,7 +51,6 @@ if __name__ == "__main__":
     velocity_limit = mink.VelocityLimit(model, max_velocities)
     limits.append(velocity_limit)
 
-    mid = model.body("target").mocapid[0]
     model = configuration.model
     data = configuration.data
     solver = "quadprog"
