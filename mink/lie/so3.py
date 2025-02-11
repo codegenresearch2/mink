@@ -9,13 +9,11 @@ import numpy as np
 from .base import MatrixLieGroup
 from .utils import get_epsilon, skew
 
-_IDENTITIY_WXYZ = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
+_IDENTITY_WXYZ = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
 _INVERT_QUAT_SIGN = np.array([1.0, -1.0, -1.0, -1.0], dtype=np.float64)
 
 
 class RollPitchYaw(NamedTuple):
-    """Struct containing roll, pitch, and yaw Euler angles."""
-
     roll: float
     pitch: float
     yaw: float
@@ -38,7 +36,7 @@ class SO3(MatrixLieGroup):
     def __post_init__(self) -> None:
         if self.wxyz.shape != (self.parameters_dim,):
             raise ValueError(
-                f"Expeced wxyz to be a length 4 vector but got {self.wxyz.shape[0]}."
+                f"Expected wxyz to be a length 4 vector but got {self.wxyz.shape[0]}."
             )
 
     def __repr__(self) -> str:
@@ -85,7 +83,7 @@ class SO3(MatrixLieGroup):
 
     @classmethod
     def identity(cls) -> SO3:
-        return SO3(wxyz=_IDENTITIY_WXYZ)
+        return SO3(wxyz=_IDENTITY_WXYZ)
 
     @classmethod
     def sample_uniform(cls) -> SO3:
@@ -157,7 +155,7 @@ class SO3(MatrixLieGroup):
     # Eq. 132.
     @classmethod
     def exp(cls, tangent: np.ndarray) -> SO3:
-        assert tangent.shape == (SO3.tangent_dim,)
+        assert tangent.shape == (cls.tangent_dim,)
         theta_squared = tangent @ tangent
         theta_pow_4 = theta_squared * theta_squared
         use_taylor = theta_squared < get_epsilon(tangent.dtype)
