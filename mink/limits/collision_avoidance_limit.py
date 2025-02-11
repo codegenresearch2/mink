@@ -45,8 +45,6 @@ class Contact:
         Returns:
             np.ndarray: A 3-dimensional numpy array representing the normal vector.
         """
-        if self.fromto.size != 6:
-            raise ValueError("fromto array must have exactly 6 elements.")
         normal = self.fromto[3:] - self.fromto[:3]
         norm = np.linalg.norm(normal)
         if norm == 0:
