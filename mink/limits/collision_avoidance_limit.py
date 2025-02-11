@@ -1,7 +1,7 @@
 """Collision avoidance limit."""
 
 import itertools
-from dataclasses import dataclass
+from dataclasses import dataclass, frozen
 from typing import List, Sequence, Union
 
 import mujoco
@@ -16,6 +16,7 @@ GeomSequence = Sequence[Geom]
 CollisionPair = tuple[GeomSequence, GeomSequence]
 CollisionPairs = Sequence[CollisionPair]
 
+@frozen
 @dataclass
 class Contact:
     """Details of a contact between two geoms."""
