@@ -31,7 +31,7 @@ def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: 
         model (mujoco.MjModel): The Mujoco model object.
         data (mujoco.MjData): The Mujoco data object.
         subtree_ids (Sequence[int]): List of subtree IDs to apply gravity compensation to.
-        qfrc_applied (Optional[np.ndarray]): Array to store the computed gravity compensation forces.
+        qfrc_applied (Optional[np.ndarray]): Array to store the computed gravity compensation forces. If not provided, a new array will be created.
     """
     if qfrc_applied is None:
         qfrc_applied = np.zeros_like(data.qacc)
@@ -48,8 +48,8 @@ if __name__ == "__main__":
     data = mujoco.MjData(model)
 
     # Get the subtree IDs for the left and right arms.
-    left_subtree_ids = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
-    right_subtree_ids = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
+    left_subtree_ids = [model.body("left/wrist_link").id, model.body("left/upper_arm_link").id]
+    right_subtree_ids = [model.body("right/wrist_link").id, model.body("right/upper_arm_link").id]
 
     # Get the dof and actuator ids for the joints we wish to control.
     joint_names: list[str] = []
