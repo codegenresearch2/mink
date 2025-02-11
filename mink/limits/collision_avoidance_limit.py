@@ -285,16 +285,20 @@ class CollisionAvoidanceLimit(Limit):
             1) If two bodies are kinematically welded together (no joints between them)
                 they are considered to be the same body within this function.
         """
+        def _is_welded_together(model: mujoco.MjModel, geom_id1: int, geom_id2: int) -> bool:
+            """Returns true if the geoms are part of the same body, or if their bodies are welded together."""
+            body1 = model.geom_bodyid[geom_id1]
+            body2 = model.geom_bodyid[geom_id2]
+            weld1 = model.body_weldid[body1]
+            weld2 = model.body_weldid[body2]
+            return weld1 == weld2
+
         geom_id_pairs = []
         for id_pair in self._collision_pairs_to_geom_id_pairs(geom_pairs):
             for geom_a, geom_b in itertools.product(*id_pair):
                 weld_body_cond = not _is_welded_together(self.model, geom_a, geom_b)
-                parent_child_cond = not _are_geom_bodies_parent_child(
-                    self.model, geom_a, geom_b
-                )
-                contype_conaffinity_cond = _is_pass_contype_conaffinity_check(
-                    self.model, geom_a, geom_b
-                )
+                parent_child_cond = not _are_geom_bodies_parent_child(self.model, geom_a, geom_b)
+                contype_conaffinity_cond = _is_pass_contype_conaffinity_check(self.model, geom_a, geom_b)
                 if weld_body_cond and parent_child_cond and contype_conaffinity_cond:
                     geom_id_pairs.append((min(geom_a, geom_b), max(geom_a, geom_b)))
         return geom_id_pairs
