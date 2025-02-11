@@ -64,7 +64,7 @@ class TestFrameTask(absltest.TestCase):
             FrameTask(
                 frame_name="pelvis",
                 frame_type="body",
-                position_cost=[-1.0, -1.0, -1.0],
+                position_cost=[-1.0, 1.5],
                 orientation_cost=[1, 2, 3],
             )
 
@@ -171,6 +171,79 @@ class TestFrameTask(absltest.TestCase):
         H_2, c_2 = task.compute_qp_objective(self.configuration)
         self.assertTrue(np.allclose(H_1, H_2))
         self.assertTrue(np.allclose(c_1, c_2))
+
+    # Additional test cases for robustness and improved error handling
+    def test_task_raises_error_if_frame_name_not_found(self):
+        with self.assertRaises(TaskDefinitionError):
+            FrameTask(
+                frame_name="nonexistent_frame",
+                frame_type="body",
+                position_cost=1.0,
+                orientation_cost=1.0,
+            )
+
+    def test_task_raises_error_if_frame_type_invalid(self):
+        with self.assertRaises(TaskDefinitionError):
+            FrameTask(
+                frame_name="pelvis",
+                frame_type="invalid_type",
+                position_cost=1.0,
+                orientation_cost=1.0,
+            )
+
+    def test_task_raises_error_if_cost_not_iterable(self):
+        with self.assertRaises(TaskDefinitionError):
+            FrameTask(
+                frame_name="pelvis",
+                frame_type="body",
+                position_cost=1,
+                orientation_cost=1.0,
+            )
+
+    def test_task_raises_error_if_orientation_cost_not_iterable(self):
+        with self.assertRaises(TaskDefinitionError):
+            FrameTask(
+                frame_name="pelvis",
+                frame_type="body",
+                position_cost=[1.0, 2.0, 3.0],
+                orientation_cost=1.0,
+            )
+
+    def test_task_raises_error_if_position_cost_negative(self):
+        with self.assertRaises(TaskDefinitionError):
+            FrameTask(
+                frame_name="pelvis",
+                frame_type="body",
+                position_cost=[-1.0, 1.5],
+                orientation_cost=[1, 2, 3],
+            )
+
+    def test_task_raises_error_if_orientation_cost_negative(self):
+        with self.assertRaises(TaskDefinitionError):
+            FrameTask(
+                frame_name="pelvis",
+                frame_type="body",
+                position_cost=[1.0, 2.0, 3.0],
+                orientation_cost=[-1, 2, 3],
+            )
+
+    def test_task_raises_error_if_position_cost_not_iterable(self):
+        with self.assertRaises(TaskDefinitionError):
+            FrameTask(
+                frame_name="pelvis",
+                frame_type="body",
+                position_cost=1,
+                orientation_cost=[1, 2, 3],
+            )
+
+    def test_task_raises_error_if_orientation_cost_not_iterable(self):
+        with self.assertRaises(TaskDefinitionError):
+            FrameTask(
+                frame_name="pelvis",
+                frame_type="body",
+                position_cost=[1.0, 2.0, 3.0],
+                orientation_cost=1,
+            )
 
 
 if __name__ == "__main__":
