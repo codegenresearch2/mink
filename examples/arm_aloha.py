@@ -4,6 +4,7 @@ import mujoco
 import mujoco.viewer
 from loop_rate_limiters import RateLimiter
 import mink
+from typing import Optional, Sequence
 
 _HERE = Path(__file__).parent
 _XML = _HERE / "aloha" / "scene.xml"
@@ -22,15 +23,15 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int], qfrc_applied: np.ndarray = None) -> None:
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: Sequence[int], qfrc_applied: Optional[np.ndarray] = None) -> None:
     """
     Compensate for gravity by applying forces to counteract gravity for specified subtree IDs.
 
     Args:
         model (mujoco.MjModel): The MuJoCo model object.
         data (mujoco.MjData): The MuJoCo data object.
-        subtree_ids (list[int]): List of subtree IDs for which gravity compensation will be applied.
-        qfrc_applied (np.ndarray, optional): Array to store the applied forces. If None, a new array will be created.
+        subtree_ids (Sequence[int]): List of subtree IDs for which gravity compensation will be applied.
+        qfrc_applied (Optional[np.ndarray]): Array to store the applied forces. If None, a new array will be created.
     """
     if qfrc_applied is None:
         qfrc_applied = np.zeros_like(data.qfrc_applied)
