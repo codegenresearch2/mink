@@ -13,8 +13,8 @@ class TestUtils(absltest.TestCase):
 
     def test_skew_transpose_equals_negative(self):
         v = np.random.randn(3)
-        sm = utils.skew(v)
-        self.assertTrue(np.allclose(sm.T, -sm))
+        m = utils.skew(v)
+        np.testing.assert_allclose(m.T, -m)
 
 
 if __name__ == "__main__":
