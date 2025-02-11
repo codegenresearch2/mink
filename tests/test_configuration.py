@@ -8,7 +8,7 @@ import mink
 
 
 class TestConfiguration(absltest.TestCase):
-    """Test task various configuration methods work as intended."""
+    """Test various configuration methods work as intended."""
 
     @classmethod
     def setUpClass(cls):
