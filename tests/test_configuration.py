@@ -113,6 +113,10 @@ class TestConfiguration(absltest.TestCase):
               </body>
             </body>
           </worldbody>
+          <key name="home">
+            <joint name="floating" pos="0 0 0"/>
+            <joint name="hinge" pos="0 0 0"/>
+          </key>
         </mujoco>
         """
         model = mujoco.MjModel.from_xml_string(xml_str)
