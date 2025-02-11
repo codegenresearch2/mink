@@ -57,6 +57,43 @@ class TestCollisionAvoidanceLimit(absltest.TestCase):
         self.assertEqual(G.shape, (expected_max_num_contacts, self.model.nv))
         self.assertEqual(h.shape, (expected_max_num_contacts,))
 
+    def test_contact_normal_jac_matches_mujoco(self):
+        """Test if the contact normal and Jacobian match the MuJoCo implementation."""
+        # Set MuJoCo options for contact normal and Jacobian computation
+        self.model.opt.cone = 0
+        self.model.opt.jacobian = 1
+        self.model.opt.enableflags = 0
+
+        g1 = get_body_geom_ids(self.model, self.model.body("wrist_2_link").id)
+        g2 = get_body_geom_ids(self.model, self.model.body("upper_arm_link").id)
+
+        bound_relaxation = -1e-3
+        limit = CollisionAvoidanceLimit(
+            model=self.model,
+            geom_pairs=[(g1, g2)],
+            bound_relaxation=bound_relaxation,
+        )
+
+        G_mujoco, h_mujoco = limit.compute_qp_inequalities(self.configuration, 1e-3)
+
+        # Reset MuJoCo options to default
+        self.model.opt.cone = 1
+        self.model.opt.jacobian = 0
+        self.model.opt.enableflags = 1
+
+        # Recreate the limit with the updated model options
+        limit_reset = CollisionAvoidanceLimit(
+            model=self.model,
+            geom_pairs=[(g1, g2)],
+            bound_relaxation=bound_relaxation,
+        )
+
+        G, h = limit_reset.compute_qp_inequalities(self.configuration, 1e-3)
+
+        # Compare the results with the MuJoCo implementation
+        np.testing.assert_allclose(G, G_mujoco, rtol=1e-05, atol=1e-08)
+        np.testing.assert_allclose(h, h_mujoco, rtol=1e-05, atol=1e-08)
+
 
 if __name__ == "__main__":
     absltest.main()
