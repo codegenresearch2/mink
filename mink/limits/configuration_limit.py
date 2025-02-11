@@ -39,8 +39,8 @@ class ConfigurationLimit(Limit):
             )
 
         index_list: list[int] = []  # DoF indices that are limited.
-        lower = np.full(model.nq, -np.inf)
-        upper = np.full(model.nq, np.inf)
+        lower = np.full(model.nq, mujoco.mjMAXVAL)
+        upper = np.full(model.nq, -mujoco.mjMAXVAL)
         for jnt in range(model.njnt):
             jnt_type = model.jnt_type[jnt]
             qpos_dim = qpos_width(jnt_type)
@@ -88,28 +88,25 @@ class ConfigurationLimit(Limit):
             Pair :math:`(G, h)` representing the inequality constraint as
             :math:`G \Delta q \leq h`, or ``None`` if there is no limit.
         """
-        del dt  # Unused.
+        if self.projection_matrix is None:
+            return Constraint()
 
-        # Upper.
         delta_q_max = np.zeros(self.model.nv)
         mujoco.mj_differentiatePos(
             m=self.model,
             qvel=delta_q_max,
             dt=1.0,
-            qpos1=configuration.q,
-            qpos2=self.upper,
+            qpos1=self.upper,
+            qpos2=configuration.q,
         )
 
-        # Lower.
         delta_q_min = np.zeros(self.model.nv)
         mujoco.mj_differentiatePos(
             m=self.model,
             qvel=delta_q_min,
             dt=1.0,
-            # NOTE: mujoco.mj_differentiatePos does `qpos2 - qpos1` so notice the order
-            # swap here compared to above.
-            qpos1=self.lower,
-            qpos2=configuration.q,
+            qpos1=configuration.q,
+            qpos2=self.lower,
         )
 
         p_min = self.gain * delta_q_min[self.indices]
