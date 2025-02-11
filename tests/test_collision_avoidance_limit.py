@@ -6,6 +6,7 @@ import numpy as np
 from absl.testing import absltest
 from robot_descriptions.loaders.mujoco import load_robot_description
 
+from mink import Configuration
 from mink.limits import CollisionAvoidanceLimit
 from mink.utils import get_body_geom_ids
 
@@ -18,7 +19,7 @@ class TestCollisionAvoidanceLimit(absltest.TestCase):
         cls.model = load_robot_description("ur5e_mj_description")
 
     def setUp(self):
-        self.configuration = Configuration(self.model)  # Assuming Configuration is defined elsewhere
+        self.configuration = Configuration(self.model)
         self.configuration.update_from_keyframe("home")
 
     def test_dimensions(self):
