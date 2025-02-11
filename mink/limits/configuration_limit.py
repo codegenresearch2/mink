@@ -47,6 +47,8 @@ class ConfigurationLimit(Limit):
             jnt_id = model.jnt_dofadr[jnt]
             if jnt_type == mujoco.mjtJoint.mjJNT_FREE or not model.jnt_limited[jnt]:
                 continue  # Skip free joints and joints without limits.
+            jnt_range = model.jnt_range[jnt]
+            padr = model.jnt_qposadr[jnt]
             lower[jnt_id : jnt_id + jnt_dim] = jnt_range[0] + min_distance_from_limits
             upper[jnt_id : jnt_id + jnt_dim] = jnt_range[1] - min_distance_from_limits
             index_list.extend(range(jnt_id, jnt_id + jnt_dim))  # Add range of indices.
