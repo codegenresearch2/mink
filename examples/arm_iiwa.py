@@ -55,14 +55,14 @@ if __name__ == "__main__":
         # Initialize the mocap target at the end-effector site.
         mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
 
-        while viewer.is_running():
-            # Update task target.
-            T_wt = mink.SE3.from_mocap_name(model, data, "target")
-            end_effector_task.set_target(T_wt)
+        # Update task target.
+        T_wt = mink.SE3.from_mocap_name(model, data, "target")
+        end_effector_task.set_target(T_wt)
 
+        while viewer.is_running():
             # Compute velocity and integrate into the next configuration.
             for i in range(max_iters):
-                vel = mink.solve_ik(configuration, tasks, rate.dt, solver, damping=1e-3)
+                vel = mink.solve_ik(configuration, tasks, rate.dt, solver, 1e-3)
                 configuration.integrate_inplace(vel, rate.dt)
                 err = end_effector_task.compute_error(configuration)
                 pos_achieved = np.linalg.norm(err[:3]) <= pos_threshold
