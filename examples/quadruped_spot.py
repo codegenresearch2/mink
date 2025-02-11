@@ -90,16 +90,10 @@ if __name__ == "__main__":
                 vel = mink.solve_ik(configuration, tasks, rate.dt, solver, 1e-3)
                 configuration.integrate_inplace(vel, rate.dt)
 
-                pos_achieved = True
-                ori_achieved = True
-                for task in [
-                    eef_task,
-                    base_task,
-                    *feet_tasks,
-                ]:
-                    err = task.compute_error(configuration)
-                    pos_achieved &= bool(np.linalg.norm(err[:3]) <= pos_threshold)
-                    ori_achieved &= bool(np.linalg.norm(err[3:]) <= ori_threshold)
+                # Compute error only for eef_task
+                err = eef_task.compute_error(configuration)
+                pos_achieved = np.linalg.norm(err[:3]) <= pos_threshold
+                ori_achieved = np.linalg.norm(err[3:]) <= ori_threshold
                 if pos_achieved and ori_achieved:
                     break
 
