@@ -27,18 +27,17 @@ def _compute_qp_inequalities(
     configuration: Configuration, limits: Optional[Sequence[Limit]], dt: float
 ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
     if limits is None:
-        limits = []
-    G_list: list[np.ndarray] = []
-    h_list: list[np.ndarray] = []
+        limits = [ConfigurationLimit(configuration.model)]
+    G_list = []
+    h_list = []
     for limit in limits:
         inequality = limit.compute_qp_inequalities(configuration, dt)
         if not inequality.inactive:
-            assert inequality.G is not None and inequality.h is not None  # mypy.
             G_list.append(inequality.G)
             h_list.append(inequality.h)
     if not G_list:
         return None, None
-    return np.vstack(G_list), np.hstack(h_list)
+    return np.vstack(G_list) if G_list else None, np.hstack(h_list) if h_list else None
 
 
 def build_ik(
@@ -63,11 +62,6 @@ def build_ik(
     """
     if limits is None:
         limits = []
-    if not isinstance(limits, list):
-        raise InvalidInputError("Limits must be a list")
-    for limit in limits:
-        if not isinstance(limit, Limit):
-            raise InvalidInputError("All limits must be instances of Limit")
     P, q = _compute_qp_objective(configuration, tasks, damping)
     G, h = _compute_qp_inequalities(configuration, limits, dt)
     return qpsolvers.Problem(P, q, G, h)
