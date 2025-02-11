@@ -10,7 +10,7 @@ import toml
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'mink'
-version = toml.load(Path(__file__).resolve().parent.parent / 'pyproject.toml')['tool']['poetry']['version']
+version: str = toml.load(Path(__file__).resolve().parent.parent / 'pyproject.toml')['tool']['poetry']['version']
 # Ensure version is prefixed with 'v' if it is not already alphabetical
 if not version[0].isalpha():
     version = f'v{version}'
