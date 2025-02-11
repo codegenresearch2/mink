@@ -97,11 +97,10 @@ if __name__ == "__main__":
                     base_task,
                     *feet_tasks,
                 ]:
-                    err = eef_task.compute_error(configuration)
+                    err = task.compute_error(configuration)
                     pos_achieved &= bool(np.linalg.norm(err[:3]) <= pos_threshold)
                     ori_achieved &= bool(np.linalg.norm(err[3:]) <= ori_threshold)
                 if pos_achieved and ori_achieved:
-                    print(f"Exiting after {i} iterations.")
                     break
 
             data.ctrl = configuration.q[7:]
