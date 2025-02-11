@@ -15,7 +15,10 @@ if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
     data = mujoco.MjData(model)
 
+    # ===================
     # Setup IK.
+    # ===================
+
     configuration = mink.Configuration(model)
 
     tasks = [
@@ -55,9 +58,9 @@ if __name__ == "__main__":
 
     # IK settings.
     solver = "quadprog"
-    pos_threshold = 1e-4
-    ori_threshold = 1e-4
-    max_iters = 20
+    POS_THRESHOLD = 1e-4
+    ORI_THRESHOLD = 1e-4
+    MAX_ITERS = 20
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -78,15 +81,16 @@ if __name__ == "__main__":
             end_effector_task.set_target(T_wt)
 
             # Compute velocity and integrate into the next configuration.
-            for i in range(max_iters):
+            for i in range(MAX_ITERS):
                 vel = mink.solve_ik(
                     configuration, tasks, rate.dt, solver, damping=1e-3, limits=limits
                 )
                 configuration.integrate_inplace(vel, rate.dt)
                 err = end_effector_task.compute_error(configuration)
-                pos_achieved = np.linalg.norm(err[:3]) <= pos_threshold
-                ori_achieved = np.linalg.norm(err[3:]) <= ori_threshold
+                pos_achieved = np.linalg.norm(err[:3]) <= POS_THRESHOLD
+                ori_achieved = np.linalg.norm(err[3:]) <= ORI_THRESHOLD
                 if pos_achieved and ori_achieved:
+                    print(f"Exiting after {i} iterations.")
                     break
 
             data.ctrl = configuration.q
