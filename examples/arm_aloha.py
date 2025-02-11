@@ -21,7 +21,7 @@ _JOINT_NAMES = [
 ]
 
 # Single arm velocity limits, taken from:
-# https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
+# https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_ros_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
                 l_err = l_ee_task.compute_error(configuration)
                 l_pos_achieved = np.linalg.norm(l_err[:3]) <= pos_threshold
                 l_ori_achieved = np.linalg.norm(l_err[3:]) <= ori_threshold
-                r_err = l_ee_task.compute_error(configuration)
+                r_err = r_ee_task.compute_error(configuration)
                 r_pos_achieved = np.linalg.norm(r_err[:3]) <= pos_threshold
                 r_ori_achieved = np.linalg.norm(r_err[3:]) <= ori_threshold
                 if (
@@ -134,6 +134,7 @@ if __name__ == "__main__":
                     and r_pos_achieved
                     and r_ori_achieved
                 ):
+                    print(f"Exiting after {i} iterations.")
                     break
 
             data.ctrl[actuator_ids] = configuration.q[dof_ids]
