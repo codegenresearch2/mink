@@ -4,23 +4,18 @@ import itertools
 import numpy as np
 from absl.testing import absltest
 from robot_descriptions.loaders.mujoco import load_robot_description
+from mujoco import MjModel, MjData, compute_contact_normal_jacobian
 from mink.limits import CollisionAvoidanceLimit
 from mink.utils import get_body_geom_ids
 
-try:
-    from mujoco import MjModel, MjData, compute_contact_normal_jacobian
-except ImportError:
-    # If the import fails, we need to handle it gracefully.
-    # This is a placeholder for when the `mujoco` module is not available.
-    class MjModel:
+class Configuration:
+    def __init__(self, model):
+        self.model = model
+        self.qpos = np.zeros(model.nv)
+
+    def update_from_keyframe(self, keyframe_name):
+        # Placeholder for actual implementation
         pass
-
-    class MjData:
-        pass
-
-    def compute_contact_normal_jacobian(*args, **kwargs):
-        raise ImportError("The `mujoco` module is not available.")
-
 
 class TestCollisionAvoidanceLimit(absltest.TestCase):
     """Test collision avoidance limit."""
