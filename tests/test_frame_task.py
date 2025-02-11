@@ -23,8 +23,8 @@ class TestFrameTask(absltest.TestCase):
         task = FrameTask(
             frame_name="pelvis",
             frame_type="body",
-            position_cost=[1.0, 1.0, 1.0],
-            orientation_cost=[5.0, 5.0, 5.0],
+            position_cost=1.0,
+            orientation_cost=5.0,
         )
         np.testing.assert_array_equal(task.cost, np.array([1.0, 1.0, 1.0, 5.0, 5.0, 5.0]))
 
