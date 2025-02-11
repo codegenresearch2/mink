@@ -27,9 +27,9 @@ def _compute_qp_inequalities(
     configuration: Configuration, limits: Optional[Sequence[Limit]], dt: float
 ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
     if limits is None:
-        limits = [ConfigurationLimit(configuration.model)]
-    G_list = []
-    h_list = []
+        limits = []
+    G_list: list[np.ndarray] = []
+    h_list: list[np.ndarray] = []
     for limit in limits:
         inequality = limit.compute_qp_inequalities(configuration, dt)
         if not inequality.inactive:
@@ -107,10 +107,7 @@ def solve_ik(
     configuration.check_limits(safety_break=safety_break)
     problem = build_ik(configuration, tasks, dt, damping, limits)
     result = qpsolvers.solve_problem(problem, solver=solver, **kwargs)
-    if result is None:
-        raise RuntimeError("QP solver returned None")
+    assert result is not None and result.x is not None, "Solver returned None for velocity"
     dq = result.x
-    if dq is None:
-        raise RuntimeError("Solver returned None for velocity")
     v: np.ndarray = dq / dt
     return v
