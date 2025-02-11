@@ -1,10 +1,8 @@
 from pathlib import Path
-
 import mujoco
 import mujoco.viewer
 import numpy as np
 from loop_rate_limiters import RateLimiter
-
 import mink
 
 _HERE = Path(__file__).parent
@@ -24,17 +22,26 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_ros_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, joint_names: list[str], dof_ids: np.ndarray, actuator_ids: np.ndarray) -> None:
+    """
+    Computes forces to counteract gravity for specific subtrees.
+    """
+    grav = np.array([0, 0, -9.81])
+    for prefix in ["left", "right"]:
+        for n in joint_names:
+            name = f"{prefix}/{n}"
+            joint = model.joint(name)
+            if joint.type in ["slide", "ball", "hinge"]:
+                force = np.dot(grav, joint.axis) * joint.armature
+                data.qfrc_applied[dof_ids[joint_names.index(name)]] = -force
 
-def construct_model():
-    model = mujoco.MjModel.from_xml_path(_XML.as_posix())
-    return model
+def construct_model() -> mujoco.MjModel:
+    return mujoco.MjModel.from_xml_path(_XML.as_posix())
 
-
-def construct_data(model):
+def construct_data(model: mujoco.MjModel) -> mujoco.MjData:
     return mujoco.MjData(model)
 
-
-def get_joint_and_actuator_ids(model):
+def get_joint_and_actuator_ids(model: mujoco.MjModel) -> tuple[list[str], np.ndarray, np.ndarray, dict[str, float]]:
     joint_names = []
     velocity_limits = {}
     for prefix in ["left", "right"]:
@@ -46,8 +53,7 @@ def get_joint_and_actuator_ids(model):
     actuator_ids = np.array([model.actuator(name).id for name in joint_names])
     return joint_names, dof_ids, actuator_ids, velocity_limits
 
-
-def construct_tasks(model):
+def construct_tasks(model: mujoco.MjModel) -> list[mink.FrameTask]:
     l_ee_task = mink.FrameTask(
         frame_name="left/gripper",
         frame_type="site",
@@ -65,8 +71,7 @@ def construct_tasks(model):
     posture_task = mink.PostureTask(model, cost=1e-4)
     return [l_ee_task, r_ee_task, posture_task]
 
-
-def construct_collision_pairs(model):
+def construct_collision_pairs(model: mujoco.MjModel) -> list[tuple[np.ndarray, list[str]]]:
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
     l_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
@@ -78,8 +83,7 @@ def construct_collision_pairs(model):
     ]
     return collision_pairs
 
-
-def construct_limits(model, joint_names, velocity_limits, collision_pairs):
+def construct_limits(model: mujoco.MjModel, joint_names: list[str], velocity_limits: dict[str, float], collision_pairs: list[tuple[np.ndarray, list[str]]]) -> list[mink.Limit]:
     config_limit = mink.ConfigurationLimit(model=model)
     velocity_limit = mink.VelocityLimit(model, velocity_limits)
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
@@ -89,7 +93,6 @@ def construct_limits(model, joint_names, velocity_limits, collision_pairs):
         collision_detection_distance=0.1,
     )
     return [config_limit, velocity_limit, collision_avoidance_limit]
-
 
 if __name__ == "__main__":
     model = construct_model()
@@ -102,8 +105,8 @@ if __name__ == "__main__":
     l_mid = model.body("left/target").mocapid[0]
     r_mid = model.body("right/target").mocapid[0]
     solver = "quadprog"
-    pos_threshold = 1e-2
-    ori_threshold = 1e-2
+    pos_threshold = 5e-3
+    ori_threshold = 5e-3
     max_iters = 2
 
     with mujoco.viewer.launch_passive(
@@ -157,6 +160,7 @@ if __name__ == "__main__":
                 ):
                     break
 
+            compensate_gravity(model, data, joint_names, dof_ids, actuator_ids)
             data.ctrl[actuator_ids] = configuration.q[dof_ids]
             mujoco.mj_step(model, data)
 
