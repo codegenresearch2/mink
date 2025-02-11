@@ -10,7 +10,7 @@ import mink
 _HERE = Path(__file__).parent
 _XML = _HERE / "aloha" / "scene.xml"
 
-# Updated robot description model names and dynamic velocity selection.
+# Single arm joint names.
 _JOINT_NAMES = [
     "waist",
     "shoulder",
@@ -20,7 +20,8 @@ _JOINT_NAMES = [
     "wrist_rotate",
 ]
 
-# Updated velocity limits based on dynamic selection.
+# Single arm velocity limits, taken from:
+# https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
 if __name__ == "__main__":
@@ -57,7 +58,7 @@ if __name__ == "__main__":
         ),
     ]
 
-    # Updated collision avoidance between geoms.
+    # Explicitly mention the geoms involved in collision avoidance.
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
     frame_geoms = mink.get_body_geom_ids(model, model.body("metal_frame").id)
