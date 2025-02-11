@@ -60,7 +60,7 @@ class PostureTask(Task):
             target_q: Desired joint configuration.
         """
         target_q = np.atleast_1d(target_q)
-        if target_q.ndim != 1 or target_q.shape[0] != (self.nq):
+        if target_q.ndim != 1 or target_q.shape[0] != self.nq:
             raise InvalidTarget(
                 f"Expected target posture to have shape ({self.nq},) but got "
                 f"{target_q.shape}"
@@ -84,6 +84,8 @@ class PostureTask(Task):
 
             e(q) = q^* \ominus q
 
+        where :math:`q^*` is the target joint configuration and :math:`q` is the current joint configuration.
+
         Args:
             configuration: Robot configuration :math:`q`.
 
@@ -93,6 +95,7 @@ class PostureTask(Task):
         if self.target_q is None:
             raise TargetNotSet(self.__class__.__name__)
 
+        # Calculate the difference between the target and current joint velocities.
         qvel = np.empty(configuration.nv)
         mujoco.mj_differentiatePos(
             m=configuration.model,
@@ -102,6 +105,7 @@ class PostureTask(Task):
             qpos2=self.target_q,
         )
 
+        # Set velocities of free joints to zero.
         if self._v_ids is not None:
             qvel[self._v_ids] = 0.0
 
@@ -116,6 +120,8 @@ class PostureTask(Task):
 
             J(q) = -I_{n_v}
 
+        where :math:`I_{n_v}` is the identity matrix of size :math:`n_v \times n_v`, and :math:`n_v` is the number of actuated joints.
+
         Args:
             configuration: Robot configuration :math:`q`.
 
@@ -125,7 +131,10 @@ class PostureTask(Task):
         if self.target_q is None:
             raise TargetNotSet(self.__class__.__name__)
 
+        # Define the Jacobian as the identity matrix.
         jac = -np.eye(configuration.nv)
+
+        # Set rows corresponding to free joints to zero.
         if self._v_ids is not None:
             jac[:, self._v_ids] = 0.0
 
