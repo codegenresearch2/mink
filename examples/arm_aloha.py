@@ -62,6 +62,11 @@ if __name__ == "__main__":
             orientation_cost=1.0,
             lm_damping=1.0,
         ),
+        posture_task := mink.PostureTask(
+            joint_names=joint_names,
+            position_cost=0.1,
+            velocity_cost=0.1,
+        ),
     ]
 
     # Enable collision avoidance between the following geoms:
@@ -70,10 +75,13 @@ if __name__ == "__main__":
     # geoms starting at subtree "right wrist" - geoms starting at subtree "left wrist".
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
+    upper_arm_l_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
+    upper_arm_r_geoms = mink.get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
     frame_geoms = mink.get_body_geom_ids(model, model.body("metal_frame").id)
     collision_pairs = [
         (l_wrist_geoms, r_wrist_geoms),
         (l_wrist_geoms + r_wrist_geoms, frame_geoms + ["table"]),
+        (upper_arm_l_geoms, upper_arm_r_geoms),
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
@@ -86,14 +94,15 @@ if __name__ == "__main__":
         mink.ConfigurationLimit(model=model),
         mink.VelocityLimit(model, velocity_limits),
         collision_avoidance_limit,
+        posture_task,
     ]
 
     l_mid = model.body("left/target").mocapid[0]
     r_mid = model.body("right/target").mocapid[0]
     solver = "quadprog"
-    pos_threshold = 1e-4
-    ori_threshold = 1e-4
-    max_iters = 20
+    pos_threshold = 1e-2
+    ori_threshold = 1e-2
+    max_iters = 2
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -109,6 +118,9 @@ if __name__ == "__main__":
         mink.move_mocap_to_frame(model, data, "left/target", "left/gripper", "site")
         mink.move_mocap_to_frame(model, data, "right/target", "right/gripper", "site")
 
+        # Set posture task target from current configuration.
+        posture_task.set_target(configuration.q)
+
         rate = RateLimiter(frequency=200.0)
         while viewer.is_running():
             # Update task targets.
@@ -123,7 +135,7 @@ if __name__ == "__main__":
                     rate.dt,
                     solver,
                     limits=limits,
-                    damping=1e-3,
+                    damping=1e-5,
                 )
                 configuration.integrate_inplace(vel, rate.dt)
 
