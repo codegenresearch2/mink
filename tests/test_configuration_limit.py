@@ -75,8 +75,8 @@ class TestConfigurationLimit(absltest.TestCase):
         nv = model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
-        expected_lower = np.array([0])
-        expected_upper = np.array([1.57])
+        expected_lower = np.asarray([0])
+        expected_upper = np.asarray([1.57])
         np.testing.assert_allclose(limit.lower, expected_lower)
         np.testing.assert_allclose(limit.upper, expected_upper)
 
@@ -101,8 +101,8 @@ class TestConfigurationLimit(absltest.TestCase):
         nv = model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
-        expected_lower = np.array([0])
-        expected_upper = np.array([1.57])
+        expected_lower = np.asarray([0])
+        expected_upper = np.asarray([1.57])
         np.testing.assert_allclose(limit.lower, expected_lower)
         np.testing.assert_allclose(limit.upper, expected_upper)
 
