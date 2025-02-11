@@ -42,6 +42,7 @@ autodoc_default_options = {
     'special-members': '__init__, __post_init__, __new__',
     'undoc-members': True,
     'inherited-members': False,
+    'exclude-members': '__init__, __post_init__, __new__',
 }
 
 # Autodoc type aliases
