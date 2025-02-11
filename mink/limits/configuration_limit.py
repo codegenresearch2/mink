@@ -41,8 +41,8 @@ class ConfigurationLimit(Limit):
             )
 
         index_list: list[int] = []  # DoF indices that are limited.
-        lower = np.full(model.nq, -np.inf)
-        upper = np.full(model.nq, np.inf)
+        lower = np.full(model.nq, -mujoco.mjMAXVAL)
+        upper = np.full(model.nq, mujoco.mjMAXVAL)
         for jnt in range(model.njnt):
             jnt_type = model.jnt_type[jnt]
             qpos_dim = qpos_width(jnt_type)
