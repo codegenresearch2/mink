@@ -50,7 +50,7 @@ if __name__ == "__main__":
         for finger in fingers:
             mink.move_mocap_to_frame(model, data, f"{finger}_target", finger, "site")
 
-        rate = RateLimiter(frequency=1000.0, warn=True)  # Added warning option
+        rate = RateLimiter(frequency=500.0, warn=False)  # Adjusted frequency and removed warn parameter
         dt = rate.dt
         t = 0
         while viewer.is_running():
@@ -66,5 +66,5 @@ if __name__ == "__main__":
 
             # Visualize at fixed FPS.
             viewer.sync()
-            rate.sleep()  # Added sleep to include warning option
+            rate.sleep()  # Included sleep function without additional comments
             t += dt
