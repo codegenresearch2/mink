@@ -116,8 +116,7 @@ if __name__ == "__main__":
     data = configuration.data
     solver = "quadprog"
 
-    rate = RateLimiter(frequency=200.0)
-    rate.warn = True  # Adding warning functionality
+    rate = RateLimiter(frequency=200.0, warn=False)  # Adjusted initialization
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
