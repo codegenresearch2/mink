@@ -38,11 +38,6 @@ autodoc_default_options = {
     'exclude-members': "__init__, __post_init__, __new__",
 }
 
-# Autodoc type aliases
-autodoc_type_aliases = {
-    "npt.ArrayLike": "ArrayLike",
-}
-
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
