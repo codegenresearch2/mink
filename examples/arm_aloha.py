@@ -4,7 +4,6 @@ import mujoco
 import mujoco.viewer
 from loop_rate_limiters import RateLimiter
 import mink
-from typing import Optional, Sequence
 
 _HERE = Path(__file__).parent
 _XML = _HERE / "aloha" / "scene.xml"
@@ -23,15 +22,15 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: Sequence[int], qfrc_applied: Optional[np.ndarray] = None) -> None:
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int], qfrc_applied: np.ndarray | None = None) -> None:
     """
     Compensate for gravity by applying forces to counteract gravity for specified subtree IDs.
 
     Args:
         model (mujoco.MjModel): The MuJoCo model object.
         data (mujoco.MjData): The MuJoCo data object.
-        subtree_ids (Sequence[int]): List of subtree IDs for which gravity compensation will be applied.
-        qfrc_applied (Optional[np.ndarray]): Array to store the applied forces. If None, a new array will be created.
+        subtree_ids (list[int]): List of subtree IDs for which gravity compensation will be applied.
+        qfrc_applied (np.ndarray | None): Array to store the applied forces. If None, a new array will be created.
     """
     if qfrc_applied is None:
         qfrc_applied = np.zeros_like(data.qfrc_applied)
@@ -40,7 +39,8 @@ def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: 
         body_ids = mujoco.mj_get_body_parentid(model, subtree_id, True)
         for body_id in body_ids:
             body = model.body(model.name2id(body_id))
-            qfrc_applied[body.jntadr[0]:body.jntadr[1]] = -np.array(body.mass) * model.opt.gravity
+            jacp = mujoco.mj_jacSubtreeCom(model, data, body_id)
+            qfrc_applied[body.jntadr[0]:body.jntadr[1]] = -np.dot(jacp.T, model.opt.gravity * body.mass)
     
     data.qfrc_applied[:] = qfrc_applied
 
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
-        geom_pairs=collision_pairs,  # type: ignore
+        geom_pairs=collision_pairs,
         minimum_distance_from_collisions=0.05,
         collision_detection_distance=0.1,
     )
