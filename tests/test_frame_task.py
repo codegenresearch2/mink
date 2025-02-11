@@ -26,22 +26,22 @@ class TestFrameTask(absltest.TestCase):
             position_cost=1.0,
             orientation_cost=5.0,
         )
-        np.testing.assert_array_equal(task.cost, np.array([1, 1, 1, 5, 5, 5]))
+        np.testing.assert_array_equal(task.cost, np.array([1.0, 1.0, 1.0, 5.0, 5.0, 5.0]))
 
         task = FrameTask(
             frame_name="pelvis",
             frame_type="body",
-            position_cost=[1, 2, 3],
-            orientation_cost=[5, 6, 7],
+            position_cost=[1.0, 2.0, 3.0],
+            orientation_cost=[5.0, 6.0, 7.0],
         )
-        np.testing.assert_array_equal(task.cost, np.array([1, 2, 3, 5, 6, 7]))
+        np.testing.assert_array_equal(task.cost, np.array([1.0, 2.0, 3.0, 5.0, 6.0, 7.0]))
 
     def test_task_raises_error_if_cost_dim_invalid(self):
         with self.assertRaises(TaskDefinitionError):
             FrameTask(
                 frame_name="pelvis",
                 frame_type="body",
-                position_cost=[1, 2],
+                position_cost=[1.0, 2.0],
                 orientation_cost=2,
             )
         with self.assertRaises(TaskDefinitionError):
