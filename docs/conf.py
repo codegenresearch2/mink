@@ -28,21 +28,14 @@ source_suffix = {".rst": "restructuredtext"}
 
 pygments_style = "sphinx"
 
-# Napoleon settings
-napoleon_numpy_docstring = False
-napoleon_use_rtype = False
-napoleon_use_param = True
-
 # Autodoc settings
 autodoc_typehints = "both"
 autodoc_class_signature = "separated"
 autodoc_default_options = {
     'members': True,
     'member-order': 'bysource',
-    'special-members': '__init__, __post_init__, __new__',
     'undoc-members': True,
     'inherited-members': False,
-    'exclude-members': '__init__, __post_init__, __new__',
 }
 
 # Autodoc type aliases
