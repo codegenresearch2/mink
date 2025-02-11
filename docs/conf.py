@@ -34,8 +34,8 @@ autodoc_class_signature = "separated"
 autodoc_default_options = {
     'members': True,
     'member-order': 'bysource',
-    'undoc-members': True,
     'inherited-members': False,
+    'exclude-members': "__init__, __post_init__, __new__",
 }
 
 # Autodoc type aliases
