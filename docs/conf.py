@@ -17,7 +17,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
     "sphinx-mathjax-offline",
-    "sphinx.ext.napoleon",
     "sphinx_favicon",
 ]
 
@@ -27,10 +26,6 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 source_suffix = {".rst": "restructuredtext"}
 
 pygments_style = "sphinx"
-
-# Napoleon settings
-napoleon_numpy_docstring = True
-napoleon_use_rtype = True
 
 # Autodoc settings
 autodoc_typehints = "both"
