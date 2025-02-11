@@ -19,10 +19,10 @@ class TestVelocityLimit(absltest.TestCase):
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("home")
+        self.configuration.update_from_keyframe("stand")
         self.velocities = {}
         for joint in self.model.joint():
-            if joint.type != mujoco.mjtJoint.mjJNT_FREE:
+            if joint.type != mujoco.mjtJoint.mjJNT_FREE and joint.name:
                 self.velocities[joint.name] = np.pi
 
     def test_dimensions(self):
