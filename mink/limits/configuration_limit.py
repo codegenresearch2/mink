@@ -47,10 +47,10 @@ class ConfigurationLimit(Limit):
             jnt_range = model.jnt_range[jnt]
             padr = model.jnt_qposadr[jnt]
             if jnt_type == mujoco.mjtJoint.mjJNT_FREE or not model.jnt_limited[jnt]:
-                continue
+                continue  # Skip free joints and joints without limits.
             lower[padr : padr + qpos_dim] = jnt_range[0] + min_distance_from_limits
             upper[padr : padr + qpos_dim] = jnt_range[1] - min_distance_from_limits
-            index_list.append(model.jnt_dofadr[jnt])
+            index_list.extend(range(padr, padr + qpos_dim))  # Add range of indices.
 
         self.indices = np.array(index_list)
         self.indices.setflags(write=False)
@@ -88,6 +88,7 @@ class ConfigurationLimit(Limit):
             Pair :math:`(G, h)` representing the inequality constraint as
             :math:`G \Delta q \leq h`, or ``None`` if there is no limit.
         """
+        # dt is intentionally unused.
         if self.projection_matrix is None:
             return Constraint()
 
