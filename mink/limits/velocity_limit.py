@@ -15,14 +15,12 @@ from .limit import Constraint, Limit
 class VelocityLimit(Limit):
     """Inequality constraint on joint velocities in a robot model.
 
-    Floating base joints are ignored.
-
     Attributes:
-        indices (np.ndarray): Tangent indices corresponding to velocity-limited joints.
+        indices (np.ndarray): Indices of the velocity-limited joints.
             The shape of this array is (n_velocity_limited_joints,), where n_velocity_limited_joints is the number of joints with velocity limits.
-        limit (np.ndarray): Maximum allowed velocity magnitude for velocity-limited joints, in [m]/[s] for slide joints and [rad]/[s] for hinge joints.
+        limit (np.ndarray): Maximum allowed velocity for each velocity-limited joint.
             The shape of this array is (n_velocity_limited_joints,), where n_velocity_limited_joints is the number of joints with velocity limits.
-        projection_matrix (np.ndarray): Projection from tangent space to subspace with velocity-limited joints.
+        projection_matrix (np.ndarray): Projection matrix to the subspace of velocity-limited joints.
             The shape of this array is (model.nv, n_velocity_limited_joints), where model.nv is the total number of velocity variables and n_velocity_limited_joints is the number of joints with velocity limits.
     """
 
@@ -39,7 +37,7 @@ class VelocityLimit(Limit):
 
         Args:
             model (mujoco.MjModel): MuJoCo model.
-            velocities (Mapping[str, npt.ArrayLike]): Dictionary mapping joint name to maximum allowed magnitude in [m]/[s] for slide joints and [rad]/[s] for hinge joints.
+            velocities (Mapping[str, npt.ArrayLike]): Dictionary mapping joint name to maximum allowed velocity.
         """
         limit_list: list[float] = []
         index_list: list[int] = []
