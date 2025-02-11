@@ -90,7 +90,7 @@ if __name__ == "__main__":
                 vel = mink.solve_ik(configuration, tasks, rate.dt, solver, 1e-3)
                 configuration.integrate_inplace(vel, rate.dt)
 
-                # Check errors for all tasks
+                # Check errors for each task separately
                 pos_achieved = True
                 ori_achieved = True
                 for task in tasks:
