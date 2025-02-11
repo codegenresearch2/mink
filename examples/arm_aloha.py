@@ -4,7 +4,7 @@ import mujoco.viewer
 import numpy as np
 from loop_rate_limiters import RateLimiter
 import mink
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 _HERE = Path(__file__).parent
 _XML = _HERE / "aloha" / "scene.xml"
@@ -23,7 +23,7 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_ros_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: Sequence[int], grav: np.ndarray = np.array([0, 0, -9.81]), qfrc_applied: np.ndarray | None = None) -> None:
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: Sequence[int], grav: np.ndarray = np.array([0, 0, -9.81]), qfrc_applied: Optional[np.ndarray] = None) -> None:
     """
     Computes forces to counteract gravity for specific subtrees.
     
@@ -32,7 +32,7 @@ def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: 
         data (mujoco.MjData): The Mujoco data object.
         subtree_ids (Sequence[int]): List of subtree IDs for which gravity compensation is applied.
         grav (np.ndarray, optional): Gravitational acceleration vector. Defaults to np.array([0, 0, -9.81]).
-        qfrc_applied (np.ndarray | None, optional): Array to store the computed forces. If None, the forces are applied directly to the data. Defaults to None.
+        qfrc_applied (Optional[np.ndarray], optional): Array to store the computed forces. If None, the forces are applied directly to the data. Defaults to None.
     """
     if qfrc_applied is None:
         qfrc_applied = data.qfrc_applied
