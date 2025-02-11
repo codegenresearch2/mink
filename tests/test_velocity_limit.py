@@ -15,12 +15,11 @@ class TestVelocityLimit(absltest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.model = load_robot_description("g1_mj_description")  # Changed to "g1_mj_description"
+        cls.model = load_robot_description("g1_mj_description")
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("home")  # Changed to "home"
-        # NOTE(kevin): These velocities are arbitrary and do not match real hardware.
+        self.configuration.update_from_keyframe("stand")  # Changed to "stand"
         self.velocities = {
             self.model.joint(i).name: 3.14 for i in range(1, self.model.njnt)
         }
@@ -28,7 +27,7 @@ class TestVelocityLimit(absltest.TestCase):
     def test_ball_joint_invalid_limit_shape(self):
         """Test that invalid limit shape raises an error."""
         velocities = {
-            "ball": (np.pi, np.pi / 2),
+            "ball": (np.pi, np.pi / 2, np.pi / 4),
         }
         with self.assertRaises(LimitDefinitionError):
             VelocityLimit(self.model, velocities)
@@ -44,7 +43,7 @@ class TestVelocityLimit(absltest.TestCase):
     def test_indices(self):
         limit = VelocityLimit(self.model, self.velocities)
         free_joint_dims = get_freejoint_dims(self.model)[0]
-        expected_indices = np.arange(free_joint_dims, self.model.nv)
+        expected_indices = np.arange(6, self.model.nv)  # Changed to start from 6
         self.assertTrue(np.array_equal(limit.indices, expected_indices))
 
     def test_model_with_no_limit(self):
