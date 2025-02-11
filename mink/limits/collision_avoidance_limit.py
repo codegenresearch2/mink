@@ -40,9 +40,18 @@ class Contact:
 
     @property
     def normal(self) -> np.ndarray:
-        """The normal vector of the contact, pointing from geom1 to geom2."""
+        """The normal vector of the contact, pointing from geom1 to geom2.
+
+        Returns:
+            np.ndarray: A 3-dimensional numpy array representing the normal vector.
+        """
+        if self.fromto.size != 6:
+            raise ValueError("fromto array must have exactly 6 elements.")
         normal = self.fromto[3:] - self.fromto[:3]
-        return mujoco.mju_normalize3(normal)
+        norm = np.linalg.norm(normal)
+        if norm == 0:
+            raise ValueError("Normal vector is zero.")
+        return normal / norm
 
     @property
     def inactive(self) -> bool:
