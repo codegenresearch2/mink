@@ -24,132 +24,161 @@ HOME_QPOS = [
 ]
 # fmt: on
 
+# Custom exceptions
+class InvalidXMLFile(Exception):
+    """Raised when an XML file is invalid."""
+    pass
+
+class InvalidMujocoModel(Exception):
+    """Raised when a Mujoco model is invalid."""
+    pass
+
 # Function to construct the model
 def construct_model():
     """Constructs the MuJoCo model for the robotic arm and hand."""
-    arm_mjcf = mjcf.from_path(_ARM_XML.as_posix())
-    arm_mjcf.find("key", "home").remove()
-
-    hand_mjcf = mjcf.from_path(_HAND_XML.as_posix())
-    palm = hand_mjcf.worldbody.find("body", "palm")
-    palm.quat = (1, 0, 0, 0)
-    palm.pos = (0, 0, 0.095)
-    attach_site = arm_mjcf.worldbody.find("site", "attachment_site")
-    attach_site.attach(hand_mjcf)
-
-    arm_mjcf.keyframe.add("key", name="home", qpos=HOME_QPOS)
-
-    for finger in fingers:
-        body = arm_mjcf.worldbody.add("body", name=f"{finger}_target", mocap=True)
-        body.add(
-            "geom",
-            type="sphere",
-            size=".02",
-            contype="0",
-            conaffinity="0",
-            rgba=".6 .3 .3 .5",
+    try:
+        arm_mjcf = mjcf.from_path(_ARM_XML.as_posix())
+        if not arm_mjcf:
+            raise InvalidXMLFile("The arm XML file is invalid.")
+        
+        hand_mjcf = mjcf.from_path(_HAND_XML.as_posix())
+        if not hand_mjcf:
+            raise InvalidXMLFile("The hand XML file is invalid.")
+        
+        arm_mjcf.find("key", "home").remove()
+        
+        palm = hand_mjcf.worldbody.find("body", "palm")
+        palm.quat = (1, 0, 0, 0)
+        palm.pos = (0, 0, 0.095)
+        
+        attach_site = arm_mjcf.worldbody.find("site", "attachment_site")
+        attach_site.attach(hand_mjcf)
+        
+        arm_mjcf.keyframe.add("key", name="home", qpos=HOME_QPOS)
+        
+        for finger in fingers:
+            body = arm_mjcf.worldbody.add("body", name=f"{finger}_target", mocap=True)
+            body.add(
+                "geom",
+                type="sphere",
+                size=".02",
+                contype="0",
+                conaffinity="0",
+                rgba=".6 .3 .3 .5",
+            )
+        
+        mj_model = mujoco.MjModel.from_xml_string(
+            arm_mjcf.to_xml_string(), arm_mjcf.get_assets()
         )
-
-    return mujoco.MjModel.from_xml_string(
-        arm_mjcf.to_xml_string(), arm_mjcf.get_assets()
-    )
+        
+        if not mj_model:
+            raise InvalidMujocoModel("The constructed Mujoco model is invalid.")
+        
+        return mj_model
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
 # Main execution block
 if __name__ == "__main__":
     model = construct_model()
+    
+    if model:
+        configuration = mink.Configuration(model)
 
-    configuration = mink.Configuration(model)
-
-    end_effector_task = mink.FrameTask(
-        frame_name="attachment_site",
-        frame_type="site",
-        position_cost=1.0,
-        orientation_cost=1.0,
-        lm_damping=1.0,
-    )
-
-    posture_task = mink.PostureTask(model=model, cost=5e-2)
-
-    finger_tasks = []
-    for finger in fingers:
-        task = mink.RelativeFrameTask(
-            frame_name=f"allegro_left/{finger}",
+        end_effector_task = mink.FrameTask(
+            frame_name="attachment_site",
             frame_type="site",
-            root_name="allegro_left/palm",
-            root_type="body",
             position_cost=1.0,
-            orientation_cost=0.0,
+            orientation_cost=1.0,
             lm_damping=1.0,
         )
-        finger_tasks.append(task)
 
-    tasks = [end_effector_task, posture_task, *finger_tasks]
+        posture_task = mink.PostureTask(model=model, cost=5e-2)
 
-    limits = [
-        mink.ConfigurationLimit(model=model),
-    ]
-
-    # IK settings
-    solver = "quadprog"
-    model = configuration.model
-    data = configuration.data
-
-    with mujoco.viewer.launch_passive(
-        model=model, data=data, show_left_ui=False, show_right_ui=False
-    ) as viewer:
-        mujoco.mjv_defaultFreeCamera(model, viewer.cam)
-
-        mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
-        configuration.update(data.qpos)
-        posture_task.set_target_from_configuration(configuration)
-
-        # Initialize the mocap target at the end-effector site
-        mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
+        finger_tasks = []
         for finger in fingers:
-            mink.move_mocap_to_frame(
-                model, data, f"{finger}_target", f"allegro_left/{finger}", "site"
+            task = mink.RelativeFrameTask(
+                frame_name=f"allegro_left/{finger}",
+                frame_type="site",
+                root_name="allegro_left/palm",
+                root_type="body",
+                position_cost=1.0,
+                orientation_cost=0.0,
+                lm_damping=1.0,
             )
+            finger_tasks.append(task)
 
-        T_eef_prev = configuration.get_transform_frame_to_world(
-            "attachment_site", "site"
-        )
+        tasks = [end_effector_task, posture_task, *finger_tasks]
 
-        rate = RateLimiter(frequency=100.0)
-        while viewer.is_running():
-            # Update kuka end-effector task
-            T_wt = mink.SE3.from_mocap_name(model, data, "target")
-            end_effector_task.set_target(T_wt)
+        limits = [
+            mink.ConfigurationLimit(model=model),
+        ]
 
-            # Update finger tasks
-            for finger, task in zip(fingers, finger_tasks):
-                T_pm = configuration.get_transform(
-                    f"{finger}_target", "body", "allegro_left/palm", "body"
-                )
-                task.set_target(T_pm)
+        # IK settings
+        solver = "quadprog"
+        model = configuration.model
+        data = configuration.data
 
+        with mujoco.viewer.launch_passive(
+            model=model, data=data, show_left_ui=False, show_right_ui=False
+        ) as viewer:
+            mujoco.mjv_defaultFreeCamera(model, viewer.cam)
+
+            mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+            configuration.update(data.qpos)
+            posture_task.set_target_from_configuration(configuration)
+
+            # Initialize the mocap target at the end-effector site
+            mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
             for finger in fingers:
-                T_eef = configuration.get_transform_frame_to_world(
-                    "attachment_site", "site"
-                )
-                T = T_eef @ T_eef_prev.inverse()
-                T_w_mocap = mink.SE3.from_mocap_name(model, data, f"{finger}_target")
-                T_w_mocap_new = T @ T_w_mocap
-                data.mocap_pos[model.body(f"{finger}_target").mocapid[0]] = (
-                    T_w_mocap_new.translation()
-                )
-                data.mocap_quat[model.body(f"{finger}_target").mocapid[0]] = (
-                    T_w_mocap_new.rotation().wxyz
+                mink.move_mocap_to_frame(
+                    model, data, f"{finger}_target", f"allegro_left/{finger}", "site"
                 )
 
-            # Compute velocity and integrate into the next configuration
-            vel = mink.solve_ik(
-                configuration, tasks, rate.dt, solver, 1e-3, limits=limits
+            T_eef_prev = configuration.get_transform_frame_to_world(
+                "attachment_site", "site"
             )
-            configuration.integrate_inplace(vel, rate.dt)
-            mujoco.mj_camlight(model, data)
 
-            T_eef_prev = T_eef.copy()
+            rate = RateLimiter(frequency=100.0)
+            while viewer.is_running():
+                # Update kuka end-effector task
+                T_wt = mink.SE3.from_mocap_name(model, data, "target")
+                end_effector_task.set_target(T_wt)
 
-            # Visualize at fixed FPS
-            viewer.sync()
-            rate.sleep()
+                # Update finger tasks
+                for finger, task in zip(fingers, finger_tasks):
+                    T_pm = configuration.get_transform(
+                        f"{finger}_target", "body", "allegro_left/palm", "body"
+                    )
+                    task.set_target(T_pm)
+
+                for finger in fingers:
+                    T_eef = configuration.get_transform_frame_to_world(
+                        "attachment_site", "site"
+                    )
+                    T = T_eef @ T_eef_prev.inverse()
+                    T_w_mocap = mink.SE3.from_mocap_name(model, data, f"{finger}_target")
+                    T_w_mocap_new = T @ T_w_mocap
+                    data.mocap_pos[model.body(f"{finger}_target").mocapid[0]] = (
+                        T_w_mocap_new.translation()
+                    )
+                    data.mocap_quat[model.body(f"{finger}_target").mocapid[0]] = (
+                        T_w_mocap_new.rotation().wxyz
+                    )
+
+                # Compute velocity and integrate into the next configuration
+                vel = mink.solve_ik(
+                    configuration, tasks, rate.dt, solver, 1e-3, limits=limits
+                )
+                configuration.integrate_inplace(vel, rate.dt)
+                mujoco.mj_camlight(model, data)
+
+                T_eef_prev = T_eef.copy()
+
+                # Visualize at fixed FPS
+                viewer.sync()
+                rate.sleep()
+    else:
+        print("Failed to construct the model. Exiting.")
