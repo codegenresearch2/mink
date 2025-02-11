@@ -25,7 +25,7 @@ class Objective(NamedTuple):
 class Task(abc.ABC):
     """Abstract base class for kinematic tasks.
 
-    This class defines the structure for all kinematic tasks. Each task must be able to compute its error and Jacobian with respect to the robot's configuration.
+    Subclasses must implement the `compute_error` and `compute_jacobian` methods.
     """
 
     def __init__(
