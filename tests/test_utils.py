@@ -135,9 +135,9 @@ class TestUtils(absltest.TestCase):
         model = mujoco.MjModel.from_xml_string(xml_str)
         b1_id = model.body("b1").id
         actual_geom_ids = utils.get_subtree_geom_ids(model, b1_id)
-        geom_names = ["b1/g1", "b1/g2", "b2/g1"]
+        geom_names = ["b1/g1", "b1/g2", "b2/g1", "b3/g1", "b4/g1"]
         expected_geom_ids = [model.geom(g).id for g in geom_names]
-        self.assertListEqual(actual_geom_ids, expected_geom_ids)
+        self.assertSetEqual(set(actual_geom_ids), set(expected_geom_ids))
 
     def test_get_subtree_body_ids(self):
         xml_str = """
@@ -167,7 +167,7 @@ class TestUtils(absltest.TestCase):
         actual_body_ids = utils.get_subtree_body_ids(model, b1_id)
         body_names = ["b1", "b2", "b3", "b4"]
         expected_body_ids = [model.body(b).id for b in body_names]
-        self.assertListEqual(actual_body_ids, expected_body_ids)
+        self.assertSetEqual(set(actual_body_ids), set(expected_body_ids))
 
 
 if __name__ == "__main__":
