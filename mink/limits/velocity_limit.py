@@ -48,8 +48,8 @@ class VelocityLimit(Limit):
             jnt_type = model.jnt_type[jid]
             if jnt_type == mujoco.mjtJoint.mjJNT_FREE:
                 raise LimitDefinitionError(f"Free joint {joint_name} is not supported")
+            vadr = model.jnt_dofadr[jid]  # Define vadr before vdim
             vdim = dof_width(jnt_type)
-            vadr = model.jnt_dofadr[jid]
             max_vel = np.atleast_1d(max_vel)
             if max_vel.shape != (vdim,):
                 raise LimitDefinitionError(
