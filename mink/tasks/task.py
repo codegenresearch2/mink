@@ -26,8 +26,8 @@ class Task(abc.ABC):
     """Abstract base class for kinematic tasks.
 
     Subclasses must implement the following methods:
-    - `compute_error(self, configuration: Configuration) -> np.ndarray`
-    - `compute_jacobian(self, configuration: Configuration) -> np.ndarray`
+    - `compute_error(self, configuration: Configuration) -> np.ndarray`: Compute the task error function at the current configuration.
+    - `compute_jacobian(self, configuration: Configuration) -> np.ndarray`: Compute the task Jacobian at the current configuration.
     """
 
     def __init__(
@@ -138,7 +138,7 @@ class Task(abc.ABC):
         weighted_error = weight @ minus_gain_error
 
         mu = self.lm_damping * weighted_error @ weighted_error
-        eye_tg = np.eye(jacobian.shape[1])
+        eye_tg = np.eye(jacobian.shape[1])  # Correct dimension based on jacobian shape
 
         H = weighted_jacobian.T @ weighted_jacobian + mu * eye_tg  # (nv, nv)
         c = -weighted_error.T @ weighted_jacobian  # (nv,)
