@@ -37,7 +37,7 @@ class TestVelocityLimit(absltest.TestCase):
         """Test the indices of the velocity limit."""
         limit = VelocityLimit(self.model, self.velocities)
         expected = np.arange(6, self.model.nv)  # Freejoint (0-5) is not limited.
-        np.testing.assert_allclose(limit.indices, expected)
+        self.assertTrue(np.allclose(limit.indices, expected))
 
     def test_model_with_no_limit(self):
         """Verify that VelocityLimit behaves correctly when no limits are defined."""
@@ -62,7 +62,7 @@ class TestVelocityLimit(absltest.TestCase):
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
         expected_limit = np.asarray([np.pi] * nb)
-        np.testing.assert_allclose(limit.limit, expected_limit)
+        self.assertTrue(np.allclose(limit.limit, expected_limit))
 
         # Check the shapes of G and h after compute_qp_inequalities
         G, h = limit.compute_qp_inequalities(self.configuration, 1e-3)
