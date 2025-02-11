@@ -26,8 +26,9 @@ if __name__ == "__main__":
         ),
     ]
 
+    # Enable collision avoidance between wrist_3_link and floor, wall.
     collision_pairs = [
-        (mink.get_body_geom_ids(model, model.body("wrist_3_link").id), ["floor", "wall"]),
+        (model.body("wrist_3_link").geom_ids, ["floor", "wall"]),
     ]
 
     limits = [
@@ -58,17 +59,20 @@ if __name__ == "__main__":
         model=model, data=data, show_left_ui=False, show_right_ui=False
     ) as viewer:
         mujoco.mjv_defaultFreeCamera(model, viewer.cam)
-        mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
-        configuration.update(data.qpos)
-        mujoco.mj_forward(model, data)
 
+        # Initialize to the home keyframe.
+        configuration.update_from_keyframe("home")
+
+        # Initialize the mocap target at the end-effector site.
         mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
 
         rate = RateLimiter(frequency=500.0, warn=False)
         while viewer.is_running():
+            # Update task target.
             T_wt = mink.SE3.from_mocap_name(model, data, "target")
             end_effector_task.set_target(T_wt)
 
+            # Compute velocity and integrate into the next configuration.
             vel = mink.solve_ik(
                 configuration, tasks, rate.dt, solver, damping=1e-3, limits=limits
             )
@@ -82,5 +86,11 @@ if __name__ == "__main__":
             data.ctrl = configuration.q
             mujoco.mj_step(model, data)
 
+            # Visualize at fixed FPS.
             viewer.sync()
             rate.sleep()
+
+            # Visualize collision avoidance sensor output.
+            mujoco.mj_camlight(model, data)
+            mujoco.mj_fwdPosition(model, data)
+            mujoco.mj_sensorPos(model, data)
