@@ -1,5 +1,7 @@
 """Center-of-mass task implementation."""
 
+from __future__ import annotations
+
 from typing import Optional
 
 import mujoco
@@ -27,8 +29,27 @@ class ComTask(Task):
         gain: float = 1.0,
         lm_damping: float = 0.0,
     ):
-        super().__init__(cost=np.full((self.k,), cost), gain=gain, lm_damping=lm_damping)
+        super().__init__(cost=np.zeros((self.k,)), gain=gain, lm_damping=lm_damping)
         self.target_com = None
+        self.set_cost(cost)
+
+    def set_cost(self, cost: npt.ArrayLike) -> None:
+        """Set the cost for the CoM task.
+
+        Args:
+            cost: Cost vector for the CoM task, must be a vector of shape (3,).
+
+        Raises:
+            TaskDefinitionError: If the cost is not a vector of shape (3,) or if it contains negative values.
+        """
+        cost = np.atleast_1d(cost)
+        if cost.ndim != 1 or cost.shape[0] != self.k:
+            raise TaskDefinitionError(
+                f"Cost must be a vector of shape ({self.k},) but got {cost.shape}"
+            )
+        if not np.all(cost >= 0):
+            raise TaskDefinitionError("Cost values must be non-negative")
+        self.cost[:] = cost
 
     def set_target(self, target_com: npt.ArrayLike) -> None:
         """Set the target CoM position in the world frame.
