@@ -23,7 +23,12 @@ class Objective(NamedTuple):
 
 
 class Task(abc.ABC):
-    """Abstract base class for kinematic tasks."""
+    """Abstract base class for kinematic tasks.
+
+    Subclasses must implement the following methods:
+    - `compute_error(self, configuration: Configuration) -> np.ndarray`
+    - `compute_jacobian(self, configuration: Configuration) -> np.ndarray`
+    """
 
     def __init__(
         self,
