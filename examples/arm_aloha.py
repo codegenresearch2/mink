@@ -63,6 +63,7 @@ if __name__ == "__main__":
             lm_damping=1.0,
         ),
         posture_task := mink.PostureTask(
+            model=model,
             joint_names=joint_names,
             position_cost=1e-4,  # Adjust the cost parameter to match the gold code
             velocity_cost=0.1,
