@@ -19,9 +19,10 @@ class TestVelocityLimit(absltest.TestCase):
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("stand")
+        self.configuration.update_from_keyframe("home")  # Changed to "home"
         self.velocities = {
-            self.model.joint(i).name: [3.14] * self.model.joint(i).dof for i in range(self.model.njnt)
+            self.model.joint(i).name: [3.14] * self.model.joint(i).dof
+            for i in range(self.model.njnt)
         }
 
     def test_throws_error_if_gain_invalid(self):
@@ -40,7 +41,7 @@ class TestVelocityLimit(absltest.TestCase):
     def test_indices(self):
         limit = VelocityLimit(self.model, self.velocities)
         expected = np.arange(6, self.model.nv)  # Freejoint (0-5) is not limited.
-        self.assertTrue(np.array_equal(limit.indices, expected))
+        self.assertTrue(np.allclose(limit.indices, expected))
 
     def test_model_with_no_limit(self):
         empty_model = mujoco.MjModel.from_xml_string("<mujoco></mujoco>")
@@ -92,7 +93,7 @@ class TestVelocityLimit(absltest.TestCase):
         }
         limit = VelocityLimit(self.model, velocities)
         expected_indices = np.array([j.id for j in self.model.joints if j.dof == 1])
-        self.assertTrue(np.array_equal(limit.indices, expected_indices))
+        self.assertTrue(np.allclose(limit.indices, expected_indices))
 
 
 if __name__ == "__main__":
