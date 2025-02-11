@@ -36,14 +36,17 @@ def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: 
     if qfrc_applied is None:
         qfrc_applied = np.zeros_like(data.qacc)
 
-    mujoco.mj_forward(model, data)
-    total_mass = sum(model.body(body_id).mass for body_id in subtree_ids)
-    
+    # Set qfrc_applied to zero to start with
+    qfrc_applied[:] = 0.0
+
+    # Compute gravity compensation forces
     for body_id in subtree_ids:
         jacp = np.zeros(model.nv)
         mujoco.mj_jacp(model, data, jacp, body_id)
+        total_mass = model.body(body_id).mass
         qfrc_applied += -total_mass * model.opt.gravity @ jacp
 
+    # Apply the computed forces to the appropriate degrees of freedom
     for body_id in subtree_ids:
         data.qfrc_applied[mujoco.mj_dof_subtree_id(model, body_id)] = qfrc_applied[mujoco.mj_dof_subtree_id(model, body_id)]
 
@@ -90,13 +93,13 @@ if __name__ == "__main__":
     # geoms starting at subtree "right wrist" - "table",
     # geoms starting at subtree "left wrist"  - "table",
     # geoms starting at subtree "right wrist" - geoms starting at subtree "left wrist".
-    l_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
-    r_geoms = mink.get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
+    l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
+    r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
     frame_geoms = mink.get_body_geom_ids(model, model.body("metal_frame").id)
     collision_pairs = [
-        (l_geoms, mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)),
-        (r_geoms, mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)),
-        (l_geoms + r_geoms, frame_geoms + ["table"]),
+        (l_wrist_geoms, ["table"]),
+        (r_wrist_geoms, ["table"]),
+        (l_wrist_geoms + r_wrist_geoms, frame_geoms + ["table"]),
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
