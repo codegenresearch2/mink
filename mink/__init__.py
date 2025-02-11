@@ -1,10 +1,8 @@
 from pathlib import Path
-
 import mujoco
 import mujoco.viewer
 from dm_control import mjcf
 from loop_rate_limiters import RateLimiter
-
 import mink
 
 # Constants and configurations
