@@ -43,18 +43,14 @@ class ConfigurationLimit(Limit):
         upper = np.full(model.nq, mujoco.mjMAXVAL)
         for jnt in range(model.njnt):
             jnt_type = model.jnt_type[jnt]
-            qpos_dim = qpos_width(jnt_type)
-            jnt_id = model.jnt_dofadr[jnt]
+            jnt_dim = qpos_width(jnt_type)
             if jnt_type == mujoco.mjtJoint.mjJNT_FREE or not model.jnt_limited[jnt]:
                 continue  # Skip free joints and joints without limits.
             jnt_range = model.jnt_range[jnt]
             padr = model.jnt_qposadr[jnt]
-            lower[jnt_id : jnt_id + qpos_dim] = jnt_range[0] + min_distance_from_limits
-            upper[jnt_id : jnt_id + qpos_dim] = jnt_range[1] - min_distance_from_limits
-            index_list.extend(range(jnt_id, jnt_id + qpos_dim))  # Add range of indices.
-            # Ensure indices do not exceed model.nv
-            if max(index_list) >= model.nv:
-                raise IndexError("Index exceeds the number of velocity degrees of freedom.")
+            lower[padr : padr + jnt_dim] = jnt_range[0] + min_distance_from_limits
+            upper[padr : padr + jnt_dim] = jnt_range[1] - min_distance_from_limits
+            index_list.extend(range(padr, padr + jnt_dim))  # Add range of indices.
 
         self.indices = np.array(index_list)
         self.indices.setflags(write=False)
