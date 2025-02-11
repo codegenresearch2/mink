@@ -57,9 +57,9 @@ if __name__ == "__main__":
     limits.append(velocity_limit)
 
     # IK settings.
-    POS_THRESHOLD = 1e-4
-    ORI_THRESHOLD = 1e-4
-    MAX_ITERS = 20
+    pos_threshold = 1e-4
+    ori_threshold = 1e-4
+    max_iters = 20
     solver = "quadprog"
 
     with mujoco.viewer.launch_passive(
@@ -81,14 +81,14 @@ if __name__ == "__main__":
             end_effector_task.set_target(T_wt)
 
             # Compute velocity and integrate into the next configuration.
-            for i in range(MAX_ITERS):
+            for i in range(max_iters):
                 vel = mink.solve_ik(
                     configuration, tasks, rate.dt, solver, damping=1e-3, limits=limits
                 )
                 configuration.integrate_inplace(vel, rate.dt)
                 err = end_effector_task.compute_error(configuration)
-                pos_achieved = np.linalg.norm(err[:3]) <= POS_THRESHOLD
-                ori_achieved = np.linalg.norm(err[3:]) <= ORI_THRESHOLD
+                pos_achieved = np.linalg.norm(err[:3]) <= pos_threshold
+                ori_achieved = np.linalg.norm(err[3:]) <= ori_threshold
                 if pos_achieved and ori_achieved:
                     break
 
