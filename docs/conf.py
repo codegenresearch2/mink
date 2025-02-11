@@ -33,18 +33,20 @@ napoleon_numpy_docstring = True
 napoleon_use_rtype = True
 
 # Autodoc settings
-autodoc_typehints = "description"
+autodoc_typehints = "both"
 autodoc_class_signature = "separated"
 autodoc_default_options = {
     'members': True,
     'member-order': 'bysource',
     'special-members': '__init__',
     'undoc-members': True,
+    'inherited-members': False,
+    'exclude-members': '__weakref__',
 }
 
 # Autodoc type aliases
 autodoc_type_aliases = {
-    "MyTypeAlias": "MyTypeAlias",
+    "npt.ArrayLike": "ArrayLike",
 }
 
 # -- Options for HTML output -------------------------------------------------
