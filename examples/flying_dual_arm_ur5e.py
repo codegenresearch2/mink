@@ -3,6 +3,7 @@ from pathlib import Path
 import mujoco
 import mujoco.viewer
 import numpy as np
+from dm_control import mjcf
 from loop_rate_limiters import RateLimiter
 
 import mink
@@ -12,7 +13,7 @@ _XML = _HERE / "universal_robots_ur5e" / "ur5e.xml"
 
 
 def construct_model():
-    root = mujoco.root()
+    root = mjcf.RootElement()
     root.statistic.meansize = 0.08
     getattr(root.visual, "global").azimuth = -120
     getattr(root.visual, "global").elevation = -20
@@ -39,12 +40,12 @@ def construct_model():
         group=5,
     )
 
-    left_ur5e = mujoco.from_path(_XML.as_posix())
+    left_ur5e = mjcf.from_path(_XML.as_posix())
     left_ur5e.model = "l_ur5e"
     left_ur5e.find("key", "home").remove()
     left_site.attach(left_ur5e)
 
-    right_ur5e = mujoco.from_path(_XML.as_posix())
+    right_ur5e = mjcf.from_path(_XML.as_posix())
     right_ur5e.model = "r_ur5e"
     right_ur5e.find("key", "home").remove()
     right_site.attach(right_ur5e)
