@@ -25,7 +25,7 @@ class Objective(NamedTuple):
 class Task(abc.ABC):
     """Abstract base class for kinematic tasks.
 
-    Subclasses must implement the following methods:
+    This class defines the interface for all kinematic tasks. Subclasses must implement the following methods:
     - `compute_error(self, configuration: Configuration) -> np.ndarray`: Compute the task error function at the current configuration.
     - `compute_jacobian(self, configuration: Configuration) -> np.ndarray`: Compute the task Jacobian at the current configuration.
     """
@@ -43,6 +43,10 @@ class Task(abc.ABC):
             gain: Task gain alpha in [0, 1] for additional low-pass filtering. Defaults to 1.0 (no filtering) for dead-beat control.
             lm_damping: Unitless scale of the Levenberg-Marquardt (only when the error is large) regularization term, which helps when targets are infeasible.
             Increase this value if the task is too jerky under unfeasible targets, but beware that a larger damping slows down the task.
+
+        Raises:
+            InvalidGain: If the gain is not in the range [0, 1].
+            InvalidDamping: If the Levenberg-Marquardt damping is negative.
         """
         if not 0.0 <= gain <= 1.0:
             raise InvalidGain("`gain` must be in the range [0, 1]")
@@ -95,7 +99,7 @@ class Task(abc.ABC):
 
             \| J \Delta q + \alpha e \|_{W}^2 = \frac{1}{2} \Delta q^T H \Delta q + c^T q
 
-        The weight matrix :math:`W \in \mathbb{R}^{k \times k}` weights and normalizes task coordinates to the same unit. The unit of the overall contribution is [cost]^2. The configuration displacement :math:`\Delta q` is the output of inverse kinematics (we divide it by dt to get a commanded velocity).
+        where :math:`W` is a weight matrix that normalizes task coordinates to the same unit. The unit of the overall contribution is [cost]^2. The configuration displacement :math:`\Delta q` is the output of inverse kinematics (we divide it by dt to get a commanded velocity).
 
         Args:
             configuration: Robot configuration :math:`q`.
