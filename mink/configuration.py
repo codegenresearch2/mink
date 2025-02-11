@@ -63,7 +63,7 @@ class Configuration:
             q: Optional configuration vector to override internal data.qpos with.
         """
         if q is not None:
-            self.data.qpos = q
+            self.data.qpos[:] = q
         # The minimal function call required to get updated frame transforms is
         # mj_kinematics. An extra call to mj_comPos is required for updated Jacobians.
         mujoco.mj_kinematics(self.model, self.data)
@@ -94,20 +94,20 @@ class Configuration:
         """
         for jnt in range(self.model.njnt):
             if self.model.jnt_limited[jnt] and (
-                self.q[self.model.jnt_qposadr[jnt]] < self.model.jnt_range[jnt, 0] + tol
-                or self.q[self.model.jnt_qposadr[jnt]] > self.model.jnt_range[jnt, 1] - tol
+                self.data.qpos[self.model.jnt_qposadr[jnt]] < self.model.jnt_range[jnt, 0] + tol
+                or self.data.qpos[self.model.jnt_qposadr[jnt]] > self.model.jnt_range[jnt, 1] - tol
             ):
                 if safety_break:
                     raise exceptions.NotWithinConfigurationLimits(
                         joint_id=jnt,
-                        value=self.q[self.model.jnt_qposadr[jnt]],
+                        value=self.data.qpos[self.model.jnt_qposadr[jnt]],
                         lower=self.model.jnt_range[jnt, 0],
                         upper=self.model.jnt_range[jnt, 1],
                         model=self.model,
                     )
                 else:
                     print(
-                        f"Value {self.q[self.model.jnt_qposadr[jnt]]:.2f} at index {jnt} is outside of its limits: "
+                        f"Value {self.data.qpos[self.model.jnt_qposadr[jnt]]:.2f} at index {jnt} is outside of its limits: "
                         f"[{self.model.jnt_range[jnt, 0]:.2f}, {self.model.jnt_range[jnt, 1]:.2f}]"
                     )
 
