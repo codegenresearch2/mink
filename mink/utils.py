@@ -37,8 +37,6 @@ def move_mocap_to_frame(
         raise e
     except InvalidFrame as e:
         raise e
-    except Exception as e:
-        raise e
 
 def get_subtree_geom_ids(model: mujoco.MjModel, body_id: int) -> list[int]:
     """Get all geoms belonging to subtree starting at a given body.
