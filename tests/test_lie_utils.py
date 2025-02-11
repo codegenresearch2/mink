@@ -13,8 +13,9 @@ class TestUtils(absltest.TestCase):
 
     def test_skew_equals_negative(self):
         vec = np.random.randn(3)
-        skew_matrix = utils.skew(vec)
-        np.testing.assert_allclose(skew_matrix.T, -skew_matrix)
+        with self.subTest(vec=vec):
+            skew_matrix = utils.skew(vec)
+            np.testing.assert_allclose(skew_matrix.T, -skew_matrix)
 
 
 if __name__ == "__main__":
