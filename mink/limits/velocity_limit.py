@@ -19,8 +19,11 @@ class VelocityLimit(Limit):
 
     Attributes:
         indices (np.ndarray): Tangent indices corresponding to velocity-limited joints.
+            The shape of this array is (n_velocity_limited_joints,), where n_velocity_limited_joints is the number of joints with velocity limits.
         limit (np.ndarray): Maximum allowed velocity magnitude for velocity-limited joints, in [m]/[s] for slide joints and [rad]/[s] for hinge joints.
+            The shape of this array is (n_velocity_limited_joints,), where n_velocity_limited_joints is the number of joints with velocity limits.
         projection_matrix (np.ndarray): Projection from tangent space to subspace with velocity-limited joints.
+            The shape of this array is (model.nv, n_velocity_limited_joints), where model.nv is the total number of velocity variables and n_velocity_limited_joints is the number of joints with velocity limits.
     """
 
     indices: np.ndarray
@@ -79,11 +82,13 @@ class VelocityLimit(Limit):
 
         Args:
             configuration (Configuration): Robot configuration :math:`q`.
+                This argument is not used in this method.
             dt (float): Integration timestep in [s].
 
         Returns:
             Pair (G, h) representing the inequality constraint as G Δq ≤ h, or None if there is no limit.
         """
+        del configuration  # Unused argument
         if self.projection_matrix is None:
             return Constraint()
         G = np.vstack([self.projection_matrix, -self.projection_matrix])
