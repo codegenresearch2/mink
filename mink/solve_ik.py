@@ -8,7 +8,7 @@ import qpsolvers
 from .configuration import Configuration
 from .limits import ConfigurationLimit, Limit
 from .tasks import Objective, Task
-from .exceptions import InvalidInputError
+from .exceptions import InvalidInputError  # Ensure this import is correct
 
 
 def _compute_qp_objective(
@@ -26,11 +26,9 @@ def _compute_qp_objective(
 def _compute_qp_inequalities(
     configuration: Configuration, limits: Optional[Sequence[Limit]], dt: float
 ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
-    if limits is None:
-        limits = [ConfigurationLimit(configuration.model)]
     G_list = []
     h_list = []
-    for limit in limits:
+    for limit in limits or []:  # Use or [] to handle None
         inequality = limit.compute_qp_inequalities(configuration, dt)
         if not inequality.inactive:
             assert inequality.G is not None, "G should not be None"
