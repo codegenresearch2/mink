@@ -4,7 +4,7 @@ import mujoco
 import numpy as np
 
 from ..configuration import Configuration
-from ..constants import qpos_width, dof_width
+from ..constants import qpos_width
 from .exceptions import LimitDefinitionError
 from .limit import Constraint, Limit
 
