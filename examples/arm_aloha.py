@@ -57,6 +57,7 @@ if __name__ == "__main__":
             orientation_cost=1.0,
             lm_damping=1.0,
         ),
+        posture_task := mink.PostureTask(model=model, stiffness=1.0, damping=0.1),
     ]
 
     # Enable collision avoidance between the following geoms:
@@ -65,10 +66,10 @@ if __name__ == "__main__":
     # geoms starting at subtree "right wrist" - geoms starting at subtree "left wrist".
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
-    frame_geoms = mink.get_body_geom_ids(model, model.body("metal_frame").id)
+    upper_arm_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id) + mink.get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
     collision_pairs = [
         (l_wrist_geoms, r_wrist_geoms),
-        (l_wrist_geoms + r_wrist_geoms, frame_geoms + ["table"]),
+        (l_wrist_geoms + r_wrist_geoms, upper_arm_geoms + ["table"]),
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
@@ -81,14 +82,15 @@ if __name__ == "__main__":
         mink.ConfigurationLimit(model=model),
         mink.VelocityLimit(model, velocity_limits),
         collision_avoidance_limit,
+        posture_task,
     ]
 
     l_mid = model.body("left/target").mocapid[0]
     r_mid = model.body("right/target").mocapid[0]
     solver = "quadprog"
-    pos_threshold = 1e-4
-    ori_threshold = 1e-4
-    max_iters = 20
+    pos_threshold = 1e-2
+    ori_threshold = 1e-2
+    max_iters = 2
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -98,6 +100,7 @@ if __name__ == "__main__":
         # Initialize to the home keyframe.
         mujoco.mj_resetDataKeyframe(model, data, model.key("neutral_pose").id)
         configuration.update(data.qpos)
+        posture_task.set_target(configuration.q)
         mujoco.mj_forward(model, data)
 
         # Initialize mocap targets at the end-effector site.
@@ -118,7 +121,7 @@ if __name__ == "__main__":
                     rate.dt,
                     solver,
                     limits=limits,
-                    damping=1e-3,
+                    damping=1e-5,
                 )
                 configuration.integrate_inplace(vel, rate.dt)
 
