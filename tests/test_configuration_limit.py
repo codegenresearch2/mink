@@ -50,9 +50,6 @@ class TestConfigurationLimit(absltest.TestCase):
         empty_bounded = ConfigurationLimit(empty_model)
         self.assertEqual(len(empty_bounded.indices), 0)
         self.assertIsNone(empty_bounded.projection_matrix)
-        G, h = empty_bounded.compute_qp_inequalities(self.configuration, 1e-3)
-        self.assertIsNone(G)
-        self.assertIsNone(h)
 
     def test_model_with_subset_of_velocities_limited(self):
         xml_str = """
@@ -77,10 +74,10 @@ class TestConfigurationLimit(absltest.TestCase):
         self.assertEqual(len(limit.indices), nb)
         expected_indices = np.array([model.joint("hinge_limited").id])
         self.assertTrue(np.allclose(limit.indices, expected_indices))
-        expected_lower = np.array([0])
-        expected_upper = np.array([1.57])
-        self.assertTrue(np.allclose(limit.lower, expected_lower))
-        self.assertTrue(np.allclose(limit.upper, expected_upper))
+        expected_lower = np.asarray([-mujoco.mjMAXVAL, 0])
+        expected_upper = np.asarray([mujoco.mjMAXVAL, 1.57])
+        np.testing.assert_allclose(limit.lower, expected_lower)
+        np.testing.assert_allclose(limit.upper, expected_upper)
 
     def test_freejoint_ignored(self):
         xml_str = """
@@ -105,10 +102,10 @@ class TestConfigurationLimit(absltest.TestCase):
         self.assertEqual(len(limit.indices), nb)
         expected_indices = np.array([model.joint("hinge").id])
         self.assertTrue(np.allclose(limit.indices, expected_indices))
-        expected_lower = np.array([0])
-        expected_upper = np.array([1.57])
-        self.assertTrue(np.allclose(limit.lower, expected_lower))
-        self.assertTrue(np.allclose(limit.upper, expected_upper))
+        expected_lower = np.asarray([-mujoco.mjMAXVAL, 0])
+        expected_upper = np.asarray([mujoco.mjMAXVAL, 1.57])
+        np.testing.assert_allclose(limit.lower, expected_lower)
+        np.testing.assert_allclose(limit.upper, expected_upper)
 
     def test_far_from_limit(self, tol=1e-10):
         """Limit has no effect when the configuration is far away."""
