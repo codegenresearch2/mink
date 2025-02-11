@@ -28,12 +28,12 @@ def _compute_qp_inequalities(
 ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
     if limits is None:
         limits = [ConfigurationLimit(configuration.model)]
-    G_list: list[np.ndarray] = []
-    h_list: list[np.ndarray] = []
+    G_list = []
+    h_list = []
     for limit in limits:
         inequality = limit.compute_qp_inequalities(configuration, dt)
         if not inequality.inactive:
-            assert inequality.G is not None and inequality.h is not None
+            assert inequality.G is not None and inequality.h is not None  # mypy
             G_list.append(inequality.G)
             h_list.append(inequality.h)
     if not G_list:
