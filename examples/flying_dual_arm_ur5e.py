@@ -131,7 +131,7 @@ if __name__ == "__main__":
         ):
             mink.move_mocap_to_frame(model, data, mocap, frame, "site")
 
-        t = 0.0
+        t = 0.0  # Initialize t before the main loop
         while viewer.is_running():
             data.mocap_pos[base_mid][2] = 0.3 * np.sin(2.0 * t)
             base_task.set_target(mink.SE3.from_mocap_name(model, data, "base_target"))
