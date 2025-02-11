@@ -15,9 +15,9 @@ if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
     data = mujoco.MjData(model)
 
-    # ===================
-    # Setup IK.
-    # ===================
+    ## ===================
+    ## Setup IK.
+    ## ===================
 
     configuration = mink.Configuration(model)
 
@@ -57,10 +57,10 @@ if __name__ == "__main__":
     limits.append(velocity_limit)
 
     # IK settings.
-    solver = "quadprog"
     POS_THRESHOLD = 1e-4
     ORI_THRESHOLD = 1e-4
     MAX_ITERS = 20
+    solver = "quadprog"
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -90,7 +90,6 @@ if __name__ == "__main__":
                 pos_achieved = np.linalg.norm(err[:3]) <= POS_THRESHOLD
                 ori_achieved = np.linalg.norm(err[3:]) <= ORI_THRESHOLD
                 if pos_achieved and ori_achieved:
-                    print(f"Exiting after {i} iterations.")
                     break
 
             data.ctrl = configuration.q
