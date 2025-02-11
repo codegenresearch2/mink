@@ -33,11 +33,13 @@ def _compute_qp_inequalities(
     for limit in limits:
         inequality = limit.compute_qp_inequalities(configuration, dt)
         if not inequality.inactive:
+            assert inequality.G is not None, "G should not be None"
+            assert inequality.h is not None, "h should not be None"
             G_list.append(inequality.G)
             h_list.append(inequality.h)
     if not G_list:
         return None, None
-    return np.vstack(G_list) if G_list else None, np.hstack(h_list) if h_list else None
+    return np.vstack(G_list), np.hstack(h_list)
 
 
 def build_ik(
