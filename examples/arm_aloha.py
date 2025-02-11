@@ -53,12 +53,8 @@ def compensate_gravity(
 
 
 if __name__ == "__main__":
-    try:
-        model = mujoco.MjModel.from_xml_path(str(_XML))
-        data = mujoco.MjData(model)
-    except Exception as e:
-        print(f"Error initializing Mujoco model: {e}")
-        exit(1)
+    model = mujoco.MjModel.from_xml_path(str(_XML))
+    data = mujoco.MjData(model)
 
     # Bodies for which to apply gravity compensation.
     left_subtree_id = model.body("left/base_link").id
@@ -72,8 +68,8 @@ if __name__ == "__main__":
             name = f"{prefix}/{n}"
             joint_names.append(name)
             velocity_limits[name] = _VELOCITY_LIMITS[n]
-    dof_ids = [model.joint(name).id for name in joint_names]
-    actuator_ids = [model.actuator(name).id for name in joint_names]
+    dof_ids = np.array([model.joint(name).id for name in joint_names])
+    actuator_ids = np.array([model.actuator(name).id for name in joint_names])
 
     configuration = mink.Configuration(model)
 
@@ -125,61 +121,57 @@ if __name__ == "__main__":
     ori_threshold = 5e-3
     max_iters = 5
 
-    try:
-        with mujoco.viewer.launch_passive(
-            model=model, data=data, show_left_ui=False, show_right_ui=False
-        ) as viewer:
-            mujoco.mjv_defaultFreeCamera(model, viewer.cam)
+    with mujoco.viewer.launch_passive(
+        model=model, data=data, show_left_ui=False, show_right_ui=False
+    ) as viewer:
+        mujoco.mjv_defaultFreeCamera(model, viewer.cam)
 
-            # Initialize to the home keyframe.
-            mujoco.mj_resetDataKeyframe(model, data, model.key("neutral_pose").id)
-            configuration.update(data.qpos)
-            mujoco.mj_forward(model, data)
-            posture_task.set_target_from_configuration(configuration)
+        # Initialize to the home keyframe.
+        mujoco.mj_resetDataKeyframe(model, data, model.key("neutral_pose").id)
+        configuration.update(data.qpos)
+        mujoco.mj_forward(model, data)
+        posture_task.set_target_from_configuration(configuration)
 
-            # Initialize mocap targets at the end-effector site.
-            mink.move_mocap_to_frame(model, data, "left/target", "left/gripper", "site")
-            mink.move_mocap_to_frame(model, data, "right/target", "right/gripper", "site")
+        # Initialize mocap targets at the end-effector site.
+        mink.move_mocap_to_frame(model, data, "left/target", "left/gripper", "site")
+        mink.move_mocap_to_frame(model, data, "right/target", "right/gripper", "site")
 
-            rate = RateLimiter(frequency=200.0, warn=False)
-            while viewer.is_running():
-                # Update task targets.
-                l_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "left/target"))
-                r_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "right/target"))
+        rate = RateLimiter(frequency=200.0, warn=False)
+        while viewer.is_running():
+            # Update task targets.
+            l_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "left/target"))
+            r_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "right/target"))
 
-                # Compute velocity and integrate into the next configuration.
-                for i in range(max_iters):
-                    vel = mink.solve_ik(
-                        configuration,
-                        tasks,
-                        rate.dt,
-                        solver,
-                        limits=limits,
-                        damping=1e-5,
-                    )
-                    configuration.integrate_inplace(vel, rate.dt)
+            # Compute velocity and integrate into the next configuration.
+            for i in range(max_iters):
+                vel = mink.solve_ik(
+                    configuration,
+                    tasks,
+                    rate.dt,
+                    solver,
+                    limits=limits,
+                    damping=1e-5,
+                )
+                configuration.integrate_inplace(vel, rate.dt)
 
-                    l_err = l_ee_task.compute_error(configuration)
-                    l_pos_achieved = np.linalg.norm(l_err[:3]) <= pos_threshold
-                    l_ori_achieved = np.linalg.norm(l_err[3:]) <= ori_threshold
-                    r_err = r_ee_task.compute_error(configuration)
-                    r_pos_achieved = np.linalg.norm(r_err[:3]) <= pos_threshold
-                    r_ori_achieved = np.linalg.norm(r_err[3:]) <= ori_threshold
-                    if (
-                        l_pos_achieved
-                        and l_ori_achieved
-                        and r_pos_achieved
-                        and r_ori_achieved
-                    ):
-                        break
+                l_err = l_ee_task.compute_error(configuration)
+                l_pos_achieved = np.linalg.norm(l_err[:3]) <= pos_threshold
+                l_ori_achieved = np.linalg.norm(l_err[3:]) <= ori_threshold
+                r_err = r_ee_task.compute_error(configuration)
+                r_pos_achieved = np.linalg.norm(r_err[:3]) <= pos_threshold
+                r_ori_achieved = np.linalg.norm(r_err[3:]) <= ori_threshold
+                if (
+                    l_pos_achieved
+                    and l_ori_achieved
+                    and r_pos_achieved
+                    and r_ori_achieved
+                ):
+                    break
 
-                data.ctrl[actuator_ids] = configuration.q[dof_ids]
-                compensate_gravity(model, data, [left_subtree_id, right_subtree_id])
-                mujoco.mj_step(model, data)
+            data.ctrl[actuator_ids] = configuration.q[dof_ids]
+            compensate_gravity(model, data, [left_subtree_id, right_subtree_id])
+            mujoco.mj_step(model, data)
 
-                # Visualize at fixed FPS.
-                viewer.sync()
-                rate.sleep()
-    except Exception as e:
-        print(f"Error during simulation: {e}")
-        exit(1)
+            # Visualize at fixed FPS.
+            viewer.sync()
+            rate.sleep()
