@@ -90,13 +90,13 @@ if __name__ == "__main__":
                 vel = mink.solve_ik(configuration, tasks, rate.dt, solver, 1e-3)
                 configuration.integrate_inplace(vel, rate.dt)
 
-                # Check errors for each task separately
+                # Check errors for all tasks
                 pos_achieved = True
                 ori_achieved = True
-                err_eef = eef_task.compute_error(configuration)
-                pos_achieved &= bool(np.linalg.norm(err_eef[:3]) <= pos_threshold)
-                ori_achieved &= bool(np.linalg.norm(err_eef[3:]) <= ori_threshold)
-
+                for task in tasks:
+                    err = task.compute_error(configuration)
+                    pos_achieved &= bool(np.linalg.norm(err[:3]) <= pos_threshold)
+                    ori_achieved &= bool(np.linalg.norm(err[3:]) <= ori_threshold)
                 if pos_achieved and ori_achieved:
                     break
 
