@@ -13,9 +13,9 @@ class TestConfiguration(absltest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = load_robot_description("ur5e_mj_description")
-        cls.q_ref = cls.model.key("home").qpos
 
     def setUp(self):
+        self.q_ref = self.model.key("home").qpos
         self.configuration = mink.Configuration(self.model)
 
     def test_nq_nv(self):
