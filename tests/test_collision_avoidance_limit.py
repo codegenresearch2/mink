@@ -1,14 +1,13 @@
 """Tests for configuration_limit.py."""
 
 import itertools
-
 import numpy as np
 from absl.testing import absltest
 from robot_descriptions.loaders.mujoco import load_robot_description
-
 from mink import Configuration
 from mink.limits import CollisionAvoidanceLimit
 from mink.utils import get_body_geom_ids
+from mujoco import MjModel, MjData, Contact, compute_contact_normal_jacobian
 
 
 class TestCollisionAvoidanceLimit(absltest.TestCase):
@@ -56,6 +55,43 @@ class TestCollisionAvoidanceLimit(absltest.TestCase):
         # Check that the inequality constraint dimensions are valid.
         self.assertEqual(G.shape, (expected_max_num_contacts, self.model.nv))
         self.assertEqual(h.shape, (expected_max_num_contacts,))
+
+    def test_contact_normal_jac_matches_mujoco(self):
+        # Set up the model with specific options
+        model = self.model
+        model.opt.cone = True
+        model.opt.jacobian = True
+        data = MjData(model)
+
+        # Update the configuration
+        self.configuration.update_from_keyframe("home")
+        qpos = self.configuration.qpos
+        data.qpos[:] = qpos
+
+        # Get the geom IDs
+        g1 = get_body_geom_ids(model, model.body("wrist_2_link").id)
+        g2 = get_body_geom_ids(model, model.body("upper_arm_link").id)
+
+        # Define the collision avoidance limit
+        bound_relaxation = -1e-3
+        limit = CollisionAvoidanceLimit(
+            model=model,
+            geom_pairs=[(g1, g2)],
+            bound_relaxation=bound_relaxation,
+        )
+
+        # Compute the contact normal Jacobian using MuJoCo
+        contact = Contact(model)
+        contact.geom1 = g1[0]
+        contact.geom2 = g2[0]
+        contact_normal_jac = compute_contact_normal_jacobian(model, data, contact)
+
+        # Compute the contact normal Jacobian using the limit
+        G, h = limit.compute_qp_inequalities(self.configuration, 1e-3)
+        computed_jac = G[0, :]  # Assuming we are checking the first contact pair
+
+        # Compare the computed Jacobian with MuJoCo's contact normal Jacobian
+        np.testing.assert_allclose(computed_jac, contact_normal_jac, rtol=1e-5, atol=1e-8)
 
 
 if __name__ == "__main__":
