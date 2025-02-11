@@ -57,7 +57,7 @@ if __name__ == "__main__":
             orientation_cost=1.0,
             lm_damping=1.0,
         ),
-        posture_task := mink.PostureTask(model=model, cost=1e-4),  # Adjust the cost to match the gold code
+        posture_task := mink.PostureTask(model=model, cost=1e-4),  # Initialize posture task without additional comments
     ]
 
     # Enable collision avoidance between the following geoms:
@@ -71,17 +71,16 @@ if __name__ == "__main__":
         (l_wrist_geoms, r_wrist_geoms),
         (l_wrist_geoms + r_wrist_geoms, upper_arm_geoms + ["table"]),
     ]
-    collision_avoidance_limit = mink.CollisionAvoidanceLimit(
-        model=model,
-        geom_pairs=collision_pairs,  # type: ignore
-        minimum_distance_from_collisions=0.05,
-        collision_detection_distance=0.1,
-    )
 
     limits = [
         mink.ConfigurationLimit(model=model),
         mink.VelocityLimit(model, velocity_limits),
-        collision_avoidance_limit,
+        mink.CollisionAvoidanceLimit(
+            model=model,
+            geom_pairs=collision_pairs,
+            minimum_distance_from_collisions=0.05,
+            collision_detection_distance=0.1,
+        ),
         posture_task,
     ]
 
