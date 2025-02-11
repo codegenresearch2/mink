@@ -3,11 +3,27 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+from pathlib import Path
+import toml
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "mink"
+
+# Load version from pyproject.toml
+pyproject_toml = Path("pyproject.toml")
+if pyproject_toml.exists():
+    pyproject = toml.load(pyproject_toml)
+    version = pyproject["tool"]["poetry"]["version"]
+    # Ensure version is prefixed with 'v' if it is not already alphabetical
+    if not version[0].isalpha():
+        version = f"v{version}"
+else:
+    version = "0.1.0"  # Default version if pyproject.toml is not found
+
 author = "Kevin Zakka"
+copyright = f"2024, {author}"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
