@@ -22,7 +22,7 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_ros_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int], grav: np.ndarray = np.array([0, 0, -9.81])) -> None:
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int], grav: np.ndarray = np.array([0, 0, -9.81]), qfrc_applied: np.ndarray | None = None) -> None:
     """
     Computes forces to counteract gravity for specific subtrees.
     
@@ -31,13 +31,18 @@ def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: 
         data (mujoco.MjData): The Mujoco data object.
         subtree_ids (list[int]): List of subtree IDs for which gravity compensation is applied.
         grav (np.ndarray, optional): Gravitational acceleration vector. Defaults to np.array([0, 0, -9.81]).
+        qfrc_applied (np.ndarray | None, optional): Array to store the computed forces. If None, the forces are applied directly to the data. Defaults to None.
     """
-    data.qfrc_applied[:] = 0  # Reset the qfrc_applied array to avoid unintended accumulation
+    if qfrc_applied is None:
+        qfrc_applied = data.qfrc_applied
+    qfrc_applied[:] = 0  # Reset the qfrc_applied array to avoid unintended accumulation
     for subtree_id in subtree_ids:
-        for joint in model.joint_subtree(subtree_id):
-            if joint.type in ["slide", "ball", "hinge"]:
-                force = np.dot(grav, joint.axis) * joint.armature
-                data.qfrc_applied[joint.dofadr] = -force
+        subtree_mass = 0
+        subtree_com = np.zeros(3)
+        subtree_J = np.zeros((6, model.nv))
+        mujoco.mj_inertia_subtree(model, data.mocap_pos, subtree_id, subtree_mass, subtree_com, subtree_J)
+        gravity_compensation = -grav * subtree_mass
+        qfrc_applied[model.joint_subtree(subtree_id)[0].dofadr] = gravity_compensation
 
 def construct_model() -> mujoco.MjModel:
     return mujoco.MjModel.from_xml_path(_XML.as_posix())
@@ -111,7 +116,7 @@ if __name__ == "__main__":
     solver = "quadprog"
     pos_threshold = 5e-3
     ori_threshold = 5e-3
-    max_iters = 2
+    max_iters = 5  # Adjusted to match the gold code
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
