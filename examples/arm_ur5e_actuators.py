@@ -15,7 +15,7 @@ if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
     data = mujoco.MjData(model)
 
-    # =================== Setup IK. ===================
+    ## =================== Setup IK. ===================
 
     configuration = mink.Configuration(model)
 
@@ -54,14 +54,16 @@ if __name__ == "__main__":
     velocity_limit = mink.VelocityLimit(model, max_velocities)
     limits.append(velocity_limit)
 
+    ## =================== IK Settings. ===================
+
+    # Initialize the mocap target at the end-effector site.
+    mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
+
     # IK settings.
     solver = "quadprog"
     pos_threshold = 1e-4
     ori_threshold = 1e-4
     max_iters = 20
-
-    # Initialize the mocap target at the end-effector site.
-    mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -88,7 +90,6 @@ if __name__ == "__main__":
                 pos_achieved = np.linalg.norm(err[:3]) <= pos_threshold
                 ori_achieved = np.linalg.norm(err[3:]) <= ori_threshold
                 if pos_achieved and ori_achieved:
-                    print(f"Exiting after {i} iterations.")
                     break
 
             data.ctrl = configuration.q
