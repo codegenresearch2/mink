@@ -21,13 +21,6 @@ extensions = [
     "sphinx_favicon",
 ]
 
-templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-
-source_suffix = {".rst": "restructuredtext"}
-
-pygments_style = "sphinx"
-
 # Autodoc settings
 autodoc_typehints = "both"
 autodoc_class_signature = "separated"
@@ -37,6 +30,15 @@ autodoc_default_options = {
     'inherited-members': False,
     'exclude-members': "__init__, __post_init__, __new__",
 }
+
+autodoc_type_aliases = {
+    "npt.ArrayLike": "ArrayLike",
+}
+
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+pygments_style = "sphinx"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
