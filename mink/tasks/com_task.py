@@ -57,7 +57,7 @@ class ComTask(Task):
             target_com (npt.ArrayLike): Desired center-of-mass position in the world frame.
         """
         target_com = np.atleast_1d(target_com)
-        if target_com.ndim != 1 or target_com.shape[0] != (self.k):
+        if target_com.ndim != 1 or target_com.shape[0] != self.k:
             raise InvalidTarget(
                 f"Expected target CoM to have shape ({self.k},) but got "
                 f"{target_com.shape}"
