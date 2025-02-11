@@ -43,14 +43,13 @@ class ConfigurationLimit(Limit):
         upper = np.full(model.nq, mujoco.mjMAXVAL)
         for jnt in range(model.njnt):
             jnt_type = model.jnt_type[jnt]
-            qpos_dim = qpos_width(jnt_type)
-            jnt_range = model.jnt_range[jnt]
-            padr = model.jnt_qposadr[jnt]
+            jnt_dim = dof_width(jnt_type)
+            jnt_id = model.jnt_dofadr[jnt]
             if jnt_type == mujoco.mjtJoint.mjJNT_FREE or not model.jnt_limited[jnt]:
                 continue  # Skip free joints and joints without limits.
-            lower[padr : padr + qpos_dim] = jnt_range[0] + min_distance_from_limits
-            upper[padr : padr + qpos_dim] = jnt_range[1] - min_distance_from_limits
-            index_list.extend(range(padr, padr + qpos_dim))  # Add range of indices.
+            lower[jnt_id : jnt_id + jnt_dim] = jnt_range[0] + min_distance_from_limits
+            upper[jnt_id : jnt_id + jnt_dim] = jnt_range[1] - min_distance_from_limits
+            index_list.extend(range(jnt_id, jnt_id + jnt_dim))  # Add range of indices.
             # Ensure indices do not exceed model.nv
             if max(index_list) >= model.nv:
                 raise IndexError("Index exceeds the number of velocity degrees of freedom.")
@@ -91,7 +90,8 @@ class ConfigurationLimit(Limit):
             Pair :math:`(G, h)` representing the inequality constraint as
             :math:`G \Delta q \leq h`, or ``None`` if there is no limit.
         """
-        # dt is intentionally unused.
+        del dt  # Unused.
+
         if self.projection_matrix is None:
             return Constraint()
 
