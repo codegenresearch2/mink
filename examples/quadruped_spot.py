@@ -24,7 +24,7 @@ if __name__ == "__main__":
     feet = ["FL", "FR", "HR", "HL"]
 
     base_task = mink.FrameTask(
-        frame_name="body",
+        frame_name="body_target",
         frame_type="body",
         position_cost=1.0,
         orientation_cost=1.0,
@@ -43,15 +43,13 @@ if __name__ == "__main__":
         feet_tasks.append(task)
 
     eef_task = mink.FrameTask(
-        frame_name="EE",
+        frame_name="EE_target",
         frame_type="site",
         position_cost=1.0,
         orientation_cost=1.0,
     )
 
     tasks = [base_task, posture_task, *feet_tasks, eef_task]
-
-    ## =================== ##
 
     base_mid = model.body("body_target").mocapid[0]
     feet_mid = [model.body(f"{foot}_target").mocapid[0] for foot in feet]
@@ -78,7 +76,7 @@ if __name__ == "__main__":
         mink.move_mocap_to_frame(model, data, "body_target", "body", "body")
         mink.move_mocap_to_frame(model, data, "EE_target", "EE", "site")
 
-        rate = RateLimiter(frequency=500.0, warn=False)
+        rate = RateLimiter(frequency=500.0)
         while viewer.is_running():
             base_task.set_target(mink.SE3.from_mocap_id(data, base_mid))
             for i, task in enumerate(feet_tasks):
@@ -97,7 +95,7 @@ if __name__ == "__main__":
                     base_task,
                     *feet_tasks,
                 ]:
-                    err = eef_task.compute_error(configuration)
+                    err = task.compute_error(configuration)
                     pos_achieved &= bool(np.linalg.norm(err[:3]) <= pos_threshold)
                     ori_achieved &= bool(np.linalg.norm(err[3:]) <= ori_threshold)
                 if pos_achieved and ori_achieved:
