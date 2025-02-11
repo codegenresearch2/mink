@@ -1,3 +1,9 @@
+"""
+This module contains the code for controlling a robotic arm and hand using MuJoCo and Mink libraries.
+
+It includes functions to construct the model, define tasks for inverse kinematics, and control the robot using a viewer.
+"""
+
 from pathlib import Path
 import mujoco
 import mujoco.viewer
@@ -26,6 +32,7 @@ HOME_QPOS = [
 
 # Function to construct the model
 def construct_model():
+    """Constructs the MuJoCo model for the robotic arm and hand."""
     arm_mjcf = mjcf.from_path(_ARM_XML.as_posix())
     arm_mjcf.find("key", "home").remove()
 
