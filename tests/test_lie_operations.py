@@ -17,6 +17,8 @@ from .utils import assert_transforms_close
     ("SE3", SE3),
 )
 class TestOperations(parameterized.TestCase):
+    """Test group operations."""
+
     def test_inverse_bijective(self, group: Type[MatrixLieGroup]):
         """Check that the inverse of the inverse is the original transformation."""
         transform = group.sample_uniform()
