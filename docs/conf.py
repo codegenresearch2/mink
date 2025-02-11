@@ -17,7 +17,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
     "sphinx-mathjax-offline",
-    "sphinx.ext.napoleon",  # Added to match the gold code
+    "sphinx.ext.napoleon",
     "sphinx_favicon",
 ]
 
@@ -34,10 +34,10 @@ autodoc_class_signature = "separated"
 autodoc_default_options = {
     'members': True,
     'member-order': 'bysource',
-    'special-members': '__init__, __post_init__, __new__',  # Updated to match gold code
+    'special-members': '__init__, __post_init__, __new__',
     'undoc-members': True,
     'inherited-members': False,
-    'exclude-members': '__weakref__,__dict__',  # Updated to match gold code
+    'exclude-members': '__weakref__,__dict__',
 }
 
 # Autodoc type aliases
