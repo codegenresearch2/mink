@@ -24,7 +24,7 @@ class Configuration:
 
     This class provides convenient methods to access and update the kinematic quantities
     of a robot model, such as frame transforms and Jacobians. It ensures that forward
-    kinematics is computed at each time step, allowing the user to query up-to-date
+    kinematics are computed at each time step, allowing the user to query up-to-date
     information about the robot's state.
 
     In this context, a frame refers to a coordinate system that can be attached to
@@ -57,10 +57,7 @@ class Configuration:
             self.data.qpos = model.qpos0
         else:
             self.data.qpos = q
-        # The minimal function call required to get updated frame transforms is
-        # mj_kinematics. An extra call to mj_comPos is required for updated Jacobians.
-        mujoco.mj_kinematics(self.model, self.data)
-        mujoco.mj_comPos(self.model, self.data)
+        self.update()
 
     def update(self, q: Optional[np.ndarray] = None) -> None:
         """Run forward kinematics.
@@ -70,8 +67,6 @@ class Configuration:
         """
         if q is not None:
             self.data.qpos = q
-        # The minimal function call required to get updated frame transforms is
-        # mj_kinematics. An extra call to mj_comPos is required for updated Jacobians.
         mujoco.mj_kinematics(self.model, self.data)
         mujoco.mj_comPos(self.model, self.data)
 
@@ -103,7 +98,7 @@ class Configuration:
             ):
                 continue
             padr = self.model.jnt_qposadr[jnt]
-            qval = self.data.qpos[padr]
+            qval = self.q[padr]
             qmin = self.model.jnt_range[jnt, 0]
             qmax = self.model.jnt_range[jnt, 1]
             if qval < qmin - tol or qval > qmax + tol:
