@@ -40,7 +40,7 @@ class TestVelocityLimit(absltest.TestCase):
         self.assertTrue(np.allclose(limit.indices, expected))
 
     def test_model_with_no_limit(self):
-        """Test the velocity limit when the model has no limits."""
+        """Test the behavior of VelocityLimit when no limits are defined."""
         empty_model = mujoco.MjModel.from_xml_string("<mujoco></mujoco>")
         empty_bounded = VelocityLimit(empty_model)
         self.assertEqual(len(empty_bounded.indices), 0)
@@ -51,7 +51,12 @@ class TestVelocityLimit(absltest.TestCase):
 
     def test_model_with_subset_of_velocities_limited(self):
         """Test the velocity limit with a subset of velocities."""
-        limit_subset = {key: value for i, (key, value) in enumerate(self.velocities.items()) if i < 3}
+        limit_subset = {}
+        for i, (key, value) in enumerate(self.velocities.items()):
+            if i < 3:
+                limit_subset[key] = value
+            else:
+                break
         limit = VelocityLimit(self.model, limit_subset)
         nb = 3
         nv = self.model.nv
