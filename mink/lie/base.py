@@ -42,7 +42,7 @@ class MatrixLieGroup(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def identity(cls) -> Self:
-        """Returns the identity element of the group."""
+        """Returns identity element."""
         raise NotImplementedError
 
     @classmethod
@@ -84,27 +84,27 @@ class MatrixLieGroup(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def exp(cls, tangent: np.ndarray) -> Self:
-        """Computes the matrix exponential of the tangent vector."""
+        """Computes `expm(wedge(tangent))`."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def log(self) -> np.ndarray:
-        """Computes the logarithm of the transformation matrix."""
+        """Computes `vee(logm(transformation matrix))`."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def adjoint(self) -> np.ndarray:
-        """Computes the adjoint representation of the transformation."""
+        """Computes the adjoint."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def inverse(self) -> Self:
-        """Computes the inverse of the transformation."""
+        """Computes the inverse of the transform."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def normalize(self) -> Self:
-        """Normalizes the transformation to ensure it remains within the group."""
+        """Normalize/projects values and returns."""
         raise NotImplementedError
 
     # Plus and minus operators.
