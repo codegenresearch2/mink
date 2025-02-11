@@ -138,7 +138,7 @@ class Task(abc.ABC):
         weighted_error = weight @ minus_gain_error
 
         mu = self.lm_damping * weighted_error @ weighted_error
-        eye_tg = np.eye(jacobian.shape[1])  # Correct dimension based on jacobian shape
+        eye_tg = np.eye(configuration.model.nv)  # Correct dimension based on configuration model
 
         H = weighted_jacobian.T @ weighted_jacobian + mu * eye_tg  # (nv, nv)
         c = -weighted_error.T @ weighted_jacobian  # (nv,)
