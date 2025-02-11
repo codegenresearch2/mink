@@ -1,4 +1,4 @@
-"""Tests lie/utils.py."""
+"""Tests for utils.py."""
 
 import numpy as np
 from absl.testing import absltest
@@ -12,8 +12,9 @@ class TestUtils(absltest.TestCase):
             utils.skew(np.zeros((5,)))
 
     def test_skew_transpose_equals_negative(self):
-        m = utils.skew(np.random.randn(3))
-        np.testing.assert_allclose(m.T, -m)
+        vector = np.random.randn(3)
+        skew_matrix = utils.skew(vector)
+        np.testing.assert_allclose(skew_matrix.T, -skew_matrix)
 
 
 if __name__ == "__main__":
