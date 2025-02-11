@@ -111,19 +111,19 @@ class MatrixLieGroup(abc.ABC):
 
     def rplus(self, other: np.ndarray) -> Self:
         """Performs a right plus operation, i.e., self * exp(other)."""
-        return self @ self.exp(other)
+        return self @ self.exp(other)  # Eqn. 25
 
     def rminus(self, other: Self) -> np.ndarray:
         """Performs a right minus operation, i.e., log(self^-1 * other)."""
-        return (other.inverse() @ self).log()
+        return (other.inverse() @ self).log()  # Eqn. 26
 
     def lplus(self, other: np.ndarray) -> Self:
         """Performs a left plus operation, i.e., exp(other) * self."""
-        return self.exp(other) @ self
+        return self.exp(other) @ self  # Eqn. 27
 
     def lminus(self, other: Self) -> np.ndarray:
         """Performs a left minus operation, i.e., log(self * other^-1)."""
-        return (self @ other.inverse()).log()
+        return (self @ other.inverse()).log()  # Eqn. 28
 
     def plus(self, other: np.ndarray) -> Self:
         """Alias for rplus."""
