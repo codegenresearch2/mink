@@ -1,5 +1,6 @@
 """Tests for configuration_limit.py."""
 
+import itertools
 import mujoco
 import numpy as np
 from absl.testing import absltest
@@ -17,10 +18,11 @@ class TestCollisionAvoidanceLimit(absltest.TestCase):
         cls.model = load_robot_description("ur5e_mj_description")
 
     def setUp(self):
-        self.configuration = Configuration(self.model)
+        self.configuration = Configuration(self.model)  # Assuming Configuration is defined elsewhere
         self.configuration.update_from_keyframe("home")
 
     def test_dimensions(self):
+        """Test the dimensions of the collision avoidance limit."""
         g1 = get_body_geom_ids(self.model, self.model.body("wrist_2_link").id)
         g2 = get_body_geom_ids(self.model, self.model.body("upper_arm_link").id)
 
