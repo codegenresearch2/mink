@@ -18,6 +18,7 @@ class TestConfiguration(absltest.TestCase):
         self.q_ref = self.model.key("home").qpos
 
     def test_nq_nv(self) -> None:
+        """Test that nq and nv are correctly set."""
         configuration = mink.Configuration(self.model)
         self.assertEqual(configuration.nq, self.model.nq)
         self.assertEqual(configuration.nv, self.model.nv)
@@ -29,7 +30,14 @@ class TestConfiguration(absltest.TestCase):
         configuration.update_from_keyframe("home")
         np.testing.assert_array_equal(configuration.q, self.q_ref)
 
+    def test_initialize_from_q(self) -> None:
+        """Test that initialization from a specific configuration works."""
+        q_init = np.random.uniform(size=self.model.nq)
+        configuration = mink.Configuration(self.model, q_init)
+        np.testing.assert_array_equal(configuration.q, q_init)
+
     def test_site_transform_world_frame(self) -> None:
+        """Test that the site transform in the world frame is correct."""
         site_name = "attachment_site"
         configuration = mink.Configuration(self.model)
 
@@ -49,24 +57,25 @@ class TestConfiguration(absltest.TestCase):
         )
 
     def test_site_transform_raises_error_if_frame_name_is_invalid(self) -> None:
-        """Raise an error when the requested frame does not exist."""
+        """Test that an error is raised when the frame name is invalid."""
         configuration = mink.Configuration(self.model)
         with self.assertRaises(mink.InvalidFrame):
             configuration.get_transform_frame_to_world("invalid_name", "site")
 
     def test_site_transform_raises_error_if_frame_type_is_invalid(self) -> None:
-        """Raise an error when the requested frame type is invalid."""
+        """Test that an error is raised when the frame type is invalid."""
         configuration = mink.Configuration(self.model)
         with self.assertRaises(mink.UnsupportedFrame):
             configuration.get_transform_frame_to_world("name_does_not_matter", "joint")
 
     def test_update_raises_error_if_keyframe_is_invalid(self) -> None:
-        """Raise an error when the request keyframe does not exist."""
+        """Test that an error is raised when the keyframe is invalid."""
         configuration = mink.Configuration(self.model)
         with self.assertRaises(mink.InvalidKeyframe):
             configuration.update_from_keyframe("invalid_keyframe")
 
     def test_inplace_integration(self) -> None:
+        """Test that inplace integration works correctly."""
         configuration = mink.Configuration(self.model, self.q_ref)
 
         dt = 1e-3
@@ -84,11 +93,33 @@ class TestConfiguration(absltest.TestCase):
         np.testing.assert_almost_equal(configuration.q, expected_qpos)
 
     def test_check_limits(self) -> None:
-        """Check that an error is raised iff a joint limit is exceeded."""
+        """Test that limits are checked correctly."""
         configuration = mink.Configuration(self.model, q=self.q_ref)
         configuration.check_limits()
         self.q_ref[0] += 1e4  # Move configuration out of bounds.
         configuration.update(q=self.q_ref)
+        with self.assertRaises(mink.NotWithinConfigurationLimits):
+            configuration.check_limits()
+
+    def test_check_limits_freejoint(self) -> None:
+        """Test that limits are checked correctly for free joints."""
+        xml_str = """
+        <mujoco>
+          <worldbody>
+            <body>
+              <joint type="free" name="floating"/>
+              <geom type="sphere" size=".1" mass=".1"/>
+              <body>
+                <joint type="hinge" name="hinge" range="0 1.57" limited="true"/>
+                <geom type="sphere" size=".1" mass=".1"/>
+              </body>
+            </body>
+          </worldbody>
+        </mujoco>
+        """
+        model = mujoco.MjModel.from_xml_string(xml_str)
+        configuration = mink.Configuration(model)
+        configuration.update_from_keyframe("home")
         with self.assertRaises(mink.NotWithinConfigurationLimits):
             configuration.check_limits()
 
