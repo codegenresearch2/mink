@@ -77,7 +77,7 @@ def compute_contact_normal_jacobian(
     mujoco.mj_jac(model, data, jac2, None, geom2_contact_pos, geom2_body)
     jac1 = np.empty((3, model.nv))
     mujoco.mj_jac(model, data, jac1, None, geom1_contact_pos, geom1_body)
-    return mujoco.mju_dot(contact.normal, jac2 - jac1)
+    return contact.normal @ (jac2 - jac1)
 
 
 def _is_welded_together(model: mujoco.MjModel, geom_id1: int, geom_id2: int) -> bool:
