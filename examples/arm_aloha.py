@@ -69,12 +69,17 @@ if __name__ == "__main__":
         ),
     ]
 
-    # Simplify collision pairs to match the gold code
+    # Include collision pairs involving upper arm links and the frame as per the gold code
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
+    upper_arm_l_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
+    upper_arm_r_geoms = mink.get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
+    frame_geoms = mink.get_body_geom_ids(model, model.body("metal_frame").id)
     collision_pairs = [
         (l_wrist_geoms, r_wrist_geoms),
         (l_wrist_geoms + r_wrist_geoms, ["table"]),
+        (upper_arm_l_geoms, upper_arm_r_geoms),
+        (upper_arm_l_geoms + upper_arm_r_geoms, frame_geoms),
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
