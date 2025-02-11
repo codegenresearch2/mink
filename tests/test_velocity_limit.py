@@ -21,8 +21,7 @@ class TestVelocityLimit(absltest.TestCase):
         self.configuration = Configuration(self.model)
         self.configuration.update_from_keyframe("home")  # Changed to "home"
         self.velocities = {
-            self.model.joint(i).name: [3.14] * self.model.joint(i).dof
-            for i in range(self.model.njnt)
+            self.model.joint(i).name: 3.14 for i in range(self.model.njnt)
         }
 
     def test_throws_error_if_gain_invalid(self):
@@ -54,8 +53,7 @@ class TestVelocityLimit(absltest.TestCase):
 
     def test_model_with_subset_of_velocities_limited(self):
         velocities = {
-            self.model.joint(i).name: [3.14] * self.model.joint(i).dof
-            for i in range(self.model.njnt) if self.model.joint(i).dof == 1
+            self.model.joint(i).name: 3.14 for i in range(self.model.njnt) if self.model.joint(i).dof == 1
         }
         limit = VelocityLimit(self.model, velocities)
         nb = sum(self.model.joint(i).dof == 1 for i in range(self.model.njnt))
@@ -80,16 +78,15 @@ class TestVelocityLimit(absltest.TestCase):
         """
         model = mujoco.MjModel.from_xml_string(xml_str)
         velocities = {
-            "floating": [np.pi, np.pi / 2, np.pi / 4],
-            "hinge": [0.5],
+            "floating": np.pi,
+            "hinge": np.pi,
         }
         with self.assertRaises(LimitDefinitionError):
             VelocityLimit(model, velocities)
 
     def test_indices_of_limited_velocities(self):
         velocities = {
-            self.model.joint(i).name: [3.14] * self.model.joint(i).dof
-            for i in range(self.model.njnt) if self.model.joint(i).dof == 1
+            self.model.joint(i).name: 3.14 for i in range(self.model.njnt) if self.model.joint(i).dof == 1
         }
         limit = VelocityLimit(self.model, velocities)
         expected_indices = np.array([j.id for j in self.model.joints if j.dof == 1])
