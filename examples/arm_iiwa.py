@@ -55,8 +55,12 @@ if __name__ == "__main__":
 
         rate = RateLimiter(frequency=500.0, warn=False)
 
-        # Update task target inside the main loop.
+        # Update task target.
+        T_wt = mink.SE3.from_mocap_name(model, data, "target")
+        end_effector_task.set_target(T_wt)
+
         while viewer.is_running():
+            # Update task target.
             T_wt = mink.SE3.from_mocap_name(model, data, "target")
             end_effector_task.set_target(T_wt)
 
