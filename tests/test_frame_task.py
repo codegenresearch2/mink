@@ -34,7 +34,7 @@ class TestFrameTask(absltest.TestCase):
             position_cost=[1.0, 2.0, 3.0],
             orientation_cost=[5.0, 6.0, 7.0],
         )
-        np.testing.assert_array_equal(task.cost, np.array([1, 2, 3, 5, 6, 7]))
+        np.testing.assert_array_equal(task.cost, np.array([1.0, 2.0, 3.0, 5.0, 6.0, 7.0]))
 
     def test_task_raises_error_if_cost_dim_invalid(self):
         with self.assertRaises(TaskDefinitionError):
@@ -64,7 +64,7 @@ class TestFrameTask(absltest.TestCase):
             FrameTask(
                 frame_name="pelvis",
                 frame_type="body",
-                position_cost=[-1.0, -1.0, -1.0],
+                position_cost=[-1.0, 1.5],
                 orientation_cost=[1, 2, 3],
             )
 
