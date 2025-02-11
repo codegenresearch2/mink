@@ -73,23 +73,21 @@ if __name__ == "__main__":
 
     configuration = mink.Configuration(model)
 
-    tasks = [
-        l_ee_task := mink.FrameTask(
-            frame_name="left/gripper",
-            frame_type="site",
-            position_cost=1.0,
-            orientation_cost=1.0,
-            lm_damping=1.0,
-        ),
-        r_ee_task := mink.FrameTask(
-            frame_name="right/gripper",
-            frame_type="site",
-            position_cost=1.0,
-            orientation_cost=1.0,
-            lm_damping=1.0,
-        ),
-        posture_task := mink.PostureTask(model, cost=1e-4),
-    ]
+    l_ee_task = mink.FrameTask(
+        frame_name="left/gripper",
+        frame_type="site",
+        position_cost=1.0,
+        orientation_cost=1.0,
+        lm_damping=1.0,
+    )
+    r_ee_task = mink.FrameTask(
+        frame_name="right/gripper",
+        frame_type="site",
+        position_cost=1.0,
+        orientation_cost=1.0,
+        lm_damping=1.0,
+    )
+    posture_task = mink.PostureTask(model, cost=1e-4)
 
     # Enable collision avoidance between the following geoms.
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
@@ -146,7 +144,7 @@ if __name__ == "__main__":
             for i in range(max_iters):
                 vel = mink.solve_ik(
                     configuration,
-                    tasks,
+                    [l_ee_task, r_ee_task, posture_task],
                     rate.dt,
                     solver,
                     limits=limits,
