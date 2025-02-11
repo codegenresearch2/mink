@@ -19,9 +19,10 @@ class TestVelocityLimit(absltest.TestCase):
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("home")  # Changed to "home"
+        self.configuration.update_from_keyframe("stand")  # Changed to "stand"
         self.velocities = {
-            self.model.joint(i).name: 3.14 for i in range(self.model.njnt)
+            self.model.joint(i).name: [3.14] * self.model.joint(i).dof
+            for i in range(self.model.njnt)
         }
 
     def test_throws_error_if_gain_invalid(self):
@@ -39,8 +40,8 @@ class TestVelocityLimit(absltest.TestCase):
 
     def test_indices(self):
         limit = VelocityLimit(self.model, self.velocities)
-        expected = np.arange(6, self.model.nv)  # Freejoint (0-5) is not limited.
-        self.assertTrue(np.allclose(limit.indices, expected))
+        expected_indices = np.arange(6, self.model.nv)  # Freejoint (0-5) is not limited.
+        self.assertTrue(np.array_equal(limit.indices, expected_indices))
 
     def test_model_with_no_limit(self):
         empty_model = mujoco.MjModel.from_xml_string("<mujoco></mujoco>")
@@ -53,7 +54,8 @@ class TestVelocityLimit(absltest.TestCase):
 
     def test_model_with_subset_of_velocities_limited(self):
         velocities = {
-            self.model.joint(i).name: 3.14 for i in range(self.model.njnt) if self.model.joint(i).dof == 1
+            self.model.joint(i).name: [3.14] * self.model.joint(i).dof
+            for i in range(self.model.njnt) if self.model.joint(i).dof == 1
         }
         limit = VelocityLimit(self.model, velocities)
         nb = sum(self.model.joint(i).dof == 1 for i in range(self.model.njnt))
@@ -86,11 +88,12 @@ class TestVelocityLimit(absltest.TestCase):
 
     def test_indices_of_limited_velocities(self):
         velocities = {
-            self.model.joint(i).name: 3.14 for i in range(self.model.njnt) if self.model.joint(i).dof == 1
+            self.model.joint(i).name: [3.14] * self.model.joint(i).dof
+            for i in range(self.model.njnt) if self.model.joint(i).dof == 1
         }
         limit = VelocityLimit(self.model, velocities)
         expected_indices = np.array([j.id for j in self.model.joints if j.dof == 1])
-        self.assertTrue(np.allclose(limit.indices, expected_indices))
+        self.assertTrue(np.array_equal(limit.indices, expected_indices))
 
 
 if __name__ == "__main__":
