@@ -57,16 +57,68 @@ class Task(abc.ABC):
 
     @abc.abstractmethod
     def compute_error(self, configuration: Configuration) -> np.ndarray:
-        """Compute the task error function at the current configuration."""
+        """Compute the task error function at the current configuration.
+
+        The error function :math:`e(q) \in \mathbb{R}^{k}` is the quantity that
+        the task aims to drive to zero (:math:`k` is the dimension of the
+        task). It appears in the first-order task dynamics:
+
+        .. math::
+
+            J(q) \Delta q = -\alpha e(q)
+
+        The Jacobian matrix :math:`J(q) \in \mathbb{R}^{k \times n_v}`, with
+        :math:`n_v` the dimension of the robot's tangent space, is the
+        derivative of the task error :math:`e(q)` with respect to the
+        configuration :math:`q \in \mathbb{R}^{n_q}`.
+
+        Args:
+            configuration: Robot configuration :math:`q`.
+
+        Returns:
+            Task error vector :math:`e(q)`.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
     def compute_jacobian(self, configuration: Configuration) -> np.ndarray:
-        """Compute the task Jacobian at the current configuration."""
+        """Compute the task Jacobian at the current configuration.
+
+        The task Jacobian :math:`J(q) \in \mathbb{R}^{k \times n_v}` is the first order
+        derivative of the error :math:`e(q) \in \mathbb{R}^{k}` that defines the task,
+        with :math:`k` the dimension of the task and :math:`n_v` the dimension of the
+        robot's tangent space.
+
+        Args:
+            configuration: Robot configuration :math:`q`.
+
+        Returns:
+            Task jacobian :math:`J(q)`.
+        """
         raise NotImplementedError
 
     def compute_qp_objective(self, configuration: Configuration) -> Objective:
-        """Compute the matrix-vector pair (H, c) of the QP objective."""
+        r"""Compute the matrix-vector pair :math:`(H, c)` of the QP objective.
+
+        This pair is such that the contribution of the task to the QP objective is:
+
+        .. math::
+
+            \| J \Delta q + \alpha e \|_{W}^2 = \frac{1}{2} \Delta q^T H
+            \Delta q + c^T q
+
+        The weight matrix :math:`W \in \mathbb{R}^{k \times k}` weights and
+        normalizes task coordinates to the same unit. The unit of the overall
+        contribution is [cost]^2. The configuration displacement :math:`\Delta
+        q` is the output of inverse kinematics (we divide it by dt to get a
+        commanded velocity).
+
+        Args:
+            configuration: Robot configuration :math:`q`.
+
+        Returns:
+            Pair :math:`(H(q), c(q))`.
+        """
         jacobian = self.compute_jacobian(configuration)  # (k, nv)
         minus_gain_error = -self.gain * self.compute_error(configuration)  # (k,)
 
