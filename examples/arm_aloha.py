@@ -54,7 +54,7 @@ def compensate_gravity(
 
 if __name__ == "__main__":
     try:
-        model = mujoco.MjModel.from_xml_path(str(_XML))
+        model = mujoco.MjModel.from_xml_path(_XML.as_posix())
         data = mujoco.MjData(model)
     except Exception as e:
         print(f"Error initializing Mujoco model: {e}")
