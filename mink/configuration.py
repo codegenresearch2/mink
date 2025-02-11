@@ -49,9 +49,9 @@ class Configuration:
         self.model = model
         self.data = mujoco.MjData(model)
         if q is not None:
-            self.data.qpos[:] = q
+            self.update(q)
         else:
-            self.data.qpos[:] = self.model.qpos0
+            self.update(self.model.qpos0)
 
     def update(self, q: Optional[np.ndarray] = None) -> None:
         """Run forward kinematics.
@@ -75,9 +75,7 @@ class Configuration:
         key_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_KEY, key_name)
         if key_id == -1:
             raise exceptions.InvalidKeyframe(key_name, self.model)
-        self.data.qpos[:] = self.model.key_qpos[key_id]
-        mujoco.mj_kinematics(self.model, self.data)
-        mujoco.mj_comPos(self.model, self.data)
+        self.update(self.model.key_qpos[key_id])
 
     def check_limits(self, tol: float = 1e-6, safety_break: bool = True) -> None:
         """Check that the current configuration is within bounds.
@@ -96,7 +94,7 @@ class Configuration:
             ):
                 continue
             padr = self.model.jnt_qposadr[jnt]
-            qval = self.data.qpos[padr]
+            qval = self.q[padr]
             qmin = self.model.jnt_range[jnt, 0]
             qmax = self.model.jnt_range[jnt, 1]
             if qval < qmin - tol or qval > qmax + tol:
