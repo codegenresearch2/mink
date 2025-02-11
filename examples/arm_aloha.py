@@ -22,18 +22,22 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_ros_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, joint_names: list[str], dof_ids: np.ndarray, actuator_ids: np.ndarray) -> None:
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int], grav: np.ndarray = np.array([0, 0, -9.81])) -> None:
     """
     Computes forces to counteract gravity for specific subtrees.
+    
+    Args:
+        model (mujoco.MjModel): The Mujoco model object.
+        data (mujoco.MjData): The Mujoco data object.
+        subtree_ids (list[int]): List of subtree IDs for which gravity compensation is applied.
+        grav (np.ndarray, optional): Gravitational acceleration vector. Defaults to np.array([0, 0, -9.81]).
     """
-    grav = np.array([0, 0, -9.81])
-    for prefix in ["left", "right"]:
-        for n in joint_names:
-            name = f"{prefix}/{n}"
-            joint = model.joint(name)
+    data.qfrc_applied[:] = 0  # Reset the qfrc_applied array to avoid unintended accumulation
+    for subtree_id in subtree_ids:
+        for joint in model.joint_subtree(subtree_id):
             if joint.type in ["slide", "ball", "hinge"]:
                 force = np.dot(grav, joint.axis) * joint.armature
-                data.qfrc_applied[dof_ids[joint_names.index(name)]] = -force
+                data.qfrc_applied[joint.dofadr] = -force
 
 def construct_model() -> mujoco.MjModel:
     return mujoco.MjModel.from_xml_path(_XML.as_posix())
@@ -160,7 +164,7 @@ if __name__ == "__main__":
                 ):
                     break
 
-            compensate_gravity(model, data, joint_names, dof_ids, actuator_ids)
+            compensate_gravity(model, data, [model.body("left/wrist_link").id, model.body("right/wrist_link").id])
             data.ctrl[actuator_ids] = configuration.q[dof_ids]
             mujoco.mj_step(model, data)
 
