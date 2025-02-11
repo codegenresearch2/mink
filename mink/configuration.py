@@ -1,12 +1,9 @@
 """Configuration space of a robot model.
 
-The :class:`Configuration` class bundles a MuJoCo `model <https://mujoco.readthedocs.io/en/latest/APIreference/APItypes.html#mjmodel>`__
-and `data <https://mujoco.readthedocs.io/en/latest/APIreference/APItypes.html#mjdata>`__,
-and enables easy access to kinematic quantities such as frame transforms and frame
-Jacobians.
-
-Frames are coordinate systems that can be attached to different elements of
-the robot model. mink supports frames of type `body`, `geom` and `site`.
+The :class:`Configuration` class bundles a MuJoCo model and its associated data,
+enabling easy access to kinematic quantities such as frame transforms and Jacobians. It
+automatically performs forward kinematics at each time step, ensuring that all
+kinematic queries return up-to-date information.
 """
 
 from typing import Optional
@@ -54,7 +51,10 @@ class Configuration:
         """
         self.model = model
         self.data = mujoco.MjData(model)
-        self.update(q=q)
+        if q is not None:
+            self.update(q=q)
+        else:
+            self.update()
 
     def update(self, q: Optional[np.ndarray] = None) -> None:
         """Run forward kinematics.
@@ -80,7 +80,7 @@ class Configuration:
         """
         key_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_KEY, key_name)
         if key_id == -1:
-            raise exceptions.InvalidKeyframe(key_name, self.model)
+            raise exceptions.InvalidKeyframe(f"Keyframe '{key_name}' not found in the model.")
         self.update(q=self.model.key_qpos[key_id])
 
     def check_limits(self, tol: float = 1e-6, safety_break: bool = True) -> None:
