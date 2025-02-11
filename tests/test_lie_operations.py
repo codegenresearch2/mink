@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
 This revised code snippet addresses the feedback received by:
 
-1. Removing the incorrectly formatted comment that caused a `SyntaxError`.
+1. Removing the improperly formatted comment that caused a `SyntaxError`.
 2. Ensuring that all test functions are encapsulated within the `TestOperations` class.
 3. Adding comprehensive docstrings for each test method.
 4. Ensuring that all necessary imports are included.
