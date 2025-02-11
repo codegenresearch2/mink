@@ -4,7 +4,7 @@ import mujoco
 import numpy as np
 
 from ..configuration import Configuration
-from ..constants import qpos_width
+from ..constants import dof_width
 from .exceptions import LimitDefinitionError
 from .limit import Constraint, Limit
 
@@ -43,14 +43,16 @@ class ConfigurationLimit(Limit):
         upper = np.full(model.nq, mujoco.mjMAXVAL)
         for jnt in range(model.njnt):
             jnt_type = model.jnt_type[jnt]
-            qpos_dim = qpos_width(jnt_type)
+            if jnt_type == mujoco.mjtJoint.mjJNT_FREE:
+                continue
+            jnt_dim = dof_width(jnt_type)
             jnt_range = model.jnt_range[jnt]
             padr = model.jnt_qposadr[jnt]
-            if jnt_type == mujoco.mjtJoint.mjJNT_FREE or not model.jnt_limited[jnt]:
+            if not model.jnt_limited[jnt]:
                 continue
-            lower[padr : padr + qpos_dim] = jnt_range[0] + min_distance_from_limits
-            upper[padr : padr + qpos_dim] = jnt_range[1] - min_distance_from_limits
-            index_list.append(model.jnt_dofadr[jnt])
+            lower[padr : padr + jnt_dim] = jnt_range[0] + min_distance_from_limits
+            upper[padr : padr + jnt_dim] = jnt_range[1] - min_distance_from_limits
+            index_list.extend(range(padr, padr + jnt_dim))
 
         self.indices = np.array(index_list)
         self.indices.setflags(write=False)
