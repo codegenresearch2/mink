@@ -14,6 +14,7 @@ _INVERT_QUAT_SIGN = np.array([1.0, -1.0, -1.0, -1.0], dtype=np.float64)
 
 
 class RollPitchYaw(NamedTuple):
+    """Struct containing roll, pitch, and yaw Euler angles."""
     roll: float
     pitch: float
     yaw: float
