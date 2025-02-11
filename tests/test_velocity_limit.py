@@ -27,8 +27,12 @@ class TestVelocityLimit(absltest.TestCase):
 
     def test_throws_error_if_joint_limit_invalid(self):
         """Test that an invalid joint limit raises a LimitDefinitionError."""
-        with self.assertRaises(LimitDefinitionError):
+        with self.assertRaises(LimitDefinitionError) as context:
             VelocityLimit(self.model, {"invalid_joint": np.pi})
+        self.assertEqual(
+            str(context.exception),
+            "Joint 'invalid_joint' does not exist in the model."
+        )
 
     def test_dimensions(self):
         """Test the dimensions of the velocity-limited joints."""
@@ -123,7 +127,7 @@ class TestVelocityLimit(absltest.TestCase):
         }
         with self.assertRaises(LimitDefinitionError) as cm:
             VelocityLimit(model, velocities)
-        expected_error_message = "Joint ball must have a limit of shape (3,). Got: (2,)"
+        expected_error_message = "Joint 'ball' must have a limit of shape (3,). Got: (2,)"
         self.assertEqual(str(cm.exception), expected_error_message)
 
     def test_that_freejoint_raises_error(self):
@@ -149,7 +153,7 @@ class TestVelocityLimit(absltest.TestCase):
         }
         with self.assertRaises(LimitDefinitionError) as cm:
             VelocityLimit(model, velocities)
-        expected_error_message = "Free joint floating is not supported"
+        expected_error_message = "Free joint 'floating' is not supported"
         self.assertEqual(str(cm.exception), expected_error_message)
 
 
