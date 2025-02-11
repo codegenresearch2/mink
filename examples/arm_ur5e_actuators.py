@@ -15,7 +15,7 @@ if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
     data = mujoco.MjData(model)
 
-    ## =================== Setup IK. ===================
+    ## =================== Setup IK. =================== ##
 
     configuration = mink.Configuration(model)
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     velocity_limit = mink.VelocityLimit(model, max_velocities)
     limits.append(velocity_limit)
 
-    ## =================== IK Settings. ===================
+    ## =================== IK Settings. =================== ##
 
     # Initialize the mocap target at the end-effector site.
     mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
