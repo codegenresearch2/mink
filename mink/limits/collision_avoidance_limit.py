@@ -6,7 +6,7 @@ between geom pairs in a MuJoCo model. It uses a gain factor to control the veloc
 and ensures that they do not collide with each other.
 """
 
-from dataclasses import dataclass
+import itertools
 from typing import List, Sequence, Union
 import mujoco
 import numpy as np
