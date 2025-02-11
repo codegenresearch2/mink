@@ -1,5 +1,3 @@
-"""Task adapted from https://github.com/stephane-caron/pink/pull/94."""
-
 from pathlib import Path
 
 import mujoco
@@ -30,14 +28,14 @@ def construct_model():
         "site", name="r_attachment_site", pos=[0, -0.2, 0], group=5
     )
 
-    left_iiwa = mjoco.MjModel.from_xml_path(_XML.as_posix())
+    left_iiwa = mujoco.MjModel.from_xml_path(_XML.as_posix())
     left_iiwa.model = "l_iiwa"
     left_iiwa.find("key", "home").remove()
     left_site.attach(left_iiwa)
     for i, g in enumerate(left_iiwa.worldbody.find_all("geom")):
         g.name = f"geom_{i}"
 
-    right_iiwa = mjoco.MjModel.from_xml_path(_XML.as_posix())
+    right_iiwa = mujoco.MjModel.from_xml_path(_XML.as_posix())
     right_iiwa.model = "r_iiwa"
     right_iiwa.find("key", "home").remove()
     right_site.attach(right_iiwa)
@@ -64,7 +62,7 @@ def construct_model():
         rgba=".3 .3 .6 .5",
     )
 
-    return root
+    return mujoco.MjModel.from_xml_string(root.to_xml_string(), root.get_assets())
 
 
 if __name__ == "__main__":
@@ -127,7 +125,7 @@ if __name__ == "__main__":
             model, data, "r_target", "r_iiwa/attachment_site", "site"
         )
 
-        rate = RateLimiter(frequency=60.0)
+        rate = RateLimiter(frequency=60.0, warn=False)
         t = 0.0
         while viewer.is_running():
             mu = (1 + np.cos(t)) / 2
