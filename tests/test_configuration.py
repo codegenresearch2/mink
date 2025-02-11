@@ -3,6 +3,7 @@
 import numpy as np
 from absl.testing import absltest
 from robot_descriptions.loaders.mujoco import load_robot_description
+import mujoco
 
 import mink
 
@@ -94,7 +95,7 @@ class TestConfiguration(absltest.TestCase):
 
     def test_initialize_from_q(self):
         """Test initialization from a specific configuration."""
-        q_init = np.zeros(self.model.nq)
+        q_init = self.q_ref
         configuration = mink.Configuration(self.model, q_init)
         np.testing.assert_array_equal(configuration.q, q_init)
 
@@ -126,6 +127,18 @@ class TestConfiguration(absltest.TestCase):
         configuration.update()
         jacobian = configuration.get_frame_jacobian(site_name, "site")
         self.assertEqual(jacobian.shape, (3, self.model.nv))
+
+    def test_site_jacobian_invalid_frame_name(self):
+        """Raise an error when the requested frame name is invalid."""
+        configuration = mink.Configuration(self.model)
+        with self.assertRaises(mink.InvalidFrame):
+            configuration.get_frame_jacobian("invalid_name", "site")
+
+    def test_site_jacobian_invalid_frame_type(self):
+        """Raise an error when the requested frame type is invalid."""
+        configuration = mink.Configuration(self.model)
+        with self.assertRaises(mink.UnsupportedFrame):
+            configuration.get_frame_jacobian("attachment_site", "joint")
 
 
 if __name__ == "__main__":
