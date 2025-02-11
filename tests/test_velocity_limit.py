@@ -19,11 +19,8 @@ class TestVelocityLimit(absltest.TestCase):
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("stand")
-        self.velocities = {}
-        for joint in self.model.joint():
-            if joint.type != mujoco.mjtJoint.mjJNT_FREE and joint.name:
-                self.velocities[joint.name] = np.pi
+        self.configuration.update_from_keyframe("home")  # Changed to "home"
+        self.velocities = {joint.name: np.pi for joint in self.model.joint() if joint.type != mujoco.mjtJoint.mjJNT_FREE}
 
     def test_dimensions(self):
         limit = VelocityLimit(self.model, self.velocities)
@@ -48,10 +45,7 @@ class TestVelocityLimit(absltest.TestCase):
         self.assertIsNone(h)
 
     def test_model_with_subset_of_velocities_limited(self):
-        velocities = {}
-        for joint in self.model.joint():
-            if joint.type == mujoco.mjtJoint.mjJNT_HINGE and joint.limited:
-                velocities[joint.name] = np.pi
+        velocities = {joint.name: np.pi for joint in self.model.joint() if joint.type == mujoco.mjtJoint.mjJNT_HINGE and joint.limited}
         limit = VelocityLimit(self.model, velocities)
         nb = len(velocities)
         nv = self.model.nv
@@ -75,7 +69,7 @@ class TestVelocityLimit(absltest.TestCase):
         """
         model = mujoco.MjModel.from_xml_string(xml_str)
         velocities = {
-            "ball": (np.pi, np.pi / 2),
+            "ball": (np.pi, np.pi / 2, np.pi / 4),
         }
         with self.assertRaises(LimitDefinitionError) as cm:
             VelocityLimit(model, velocities)
