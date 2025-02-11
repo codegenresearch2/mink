@@ -93,7 +93,7 @@ class TestConfiguration(absltest.TestCase):
         """Test that limits are checked correctly."""
         configuration = mink.Configuration(self.model, q=self.q_ref)
         configuration.check_limits()
-        self.q_ref[0] += 1e4
+        self.q_ref[0] += 1e4  # Move configuration out of bounds.
         configuration.update(q=self.q_ref)
         with self.assertRaises(mink.NotWithinConfigurationLimits):
             configuration.check_limits()
@@ -113,10 +113,6 @@ class TestConfiguration(absltest.TestCase):
               </body>
             </body>
           </worldbody>
-          <key name="home">
-            <joint name="floating" pos="0 0 0"/>
-            <joint name="hinge" pos="0 0 0"/>
-          </key>
         </mujoco>
         """
         model = mujoco.MjModel.from_xml_string(xml_str)
