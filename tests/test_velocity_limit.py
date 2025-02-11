@@ -19,16 +19,24 @@ class TestVelocityLimit(absltest.TestCase):
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("stand")
+        self.configuration.update_from_keyframe("home")
         self.velocities = {
-            self.model.joint(i).name: np.pi for i in range(self.model.njnt)
+            self.model.joint(i).name: np.random.uniform(0, np.pi) for i in range(self.model.njnt)
         }
 
     def test_dimensions(self):
         limit = VelocityLimit(self.model, self.velocities)
         nv = self.configuration.nv
-        self.assertEqual(limit.projection_matrix.shape, (nv, nv))
-        self.assertEqual(len(limit.indices), nv)
+        free_joint_dims = get_freejoint_dims(self.model)[0]
+        nb = nv - free_joint_dims
+        self.assertEqual(len(limit.indices), nb)
+        self.assertEqual(limit.projection_matrix.shape, (nb, nv))
+
+    def test_indices(self):
+        limit = VelocityLimit(self.model, self.velocities)
+        free_joint_dims = get_freejoint_dims(self.model)[0]
+        expected_indices = np.arange(free_joint_dims, self.model.nv)
+        self.assertTrue(np.array_equal(limit.indices, expected_indices))
 
     def test_model_with_no_limit(self):
         empty_model = mujoco.MjModel.from_xml_string("<mujoco></mujoco>")
@@ -54,11 +62,6 @@ class TestVelocityLimit(absltest.TestCase):
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
 
-    def test_indices(self):
-        limit = VelocityLimit(self.model, self.velocities)
-        expected_indices = np.arange(self.model.nv)
-        self.assertTrue(np.array_equal(limit.indices, expected_indices))
-
     def test_ball_joint_invalid_limit_shape(self):
         xml_str = """
         <mujoco>
@@ -76,7 +79,7 @@ class TestVelocityLimit(absltest.TestCase):
         """
         model = mujoco.MjModel.from_xml_string(xml_str)
         velocities = {
-            "ball": (np.pi, np.pi / 2),
+            "ball": (np.pi, np.pi / 2, np.pi / 4),
         }
         with self.assertRaises(LimitDefinitionError) as cm:
             VelocityLimit(model, velocities)
