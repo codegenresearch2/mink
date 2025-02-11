@@ -4,7 +4,6 @@ from pathlib import Path
 import mujoco
 import mujoco.viewer
 import numpy as np
-from dm_control.viewer import user_input
 from loop_rate_limiters import RateLimiter
 
 import mink
@@ -19,9 +18,9 @@ class KeyCallback:
     pause: bool = False
 
     def __call__(self, key: int) -> None:
-        if key == user_input.KEY_ENTER:
+        if key == mujoco.viewer.user_input.KEY_ENTER:
             self.fix_base = not self.fix_base
-        elif key == user_input.KEY_SPACE:
+        elif key == mujoco.viewer.user_input.KEY_SPACE:
             self.pause = not self.pause
 
 
@@ -30,14 +29,12 @@ if __name__ == "__main__":
     data = mujoco.MjData(model)
 
     # Joints we wish to control.
-    # fmt: off
     joint_names = [
         # Base joints.
         "joint_x", "joint_y", "joint_th",
         # Arm joints.
         "joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6", "joint_7",
     ]
-    # fmt: on
     dof_ids = np.array([model.joint(name).id for name in joint_names])
     actuator_ids = np.array([model.actuator(name).id for name in joint_names])
 
@@ -93,7 +90,7 @@ if __name__ == "__main__":
         # Initialize the mocap target at the end-effector site.
         mink.move_mocap_to_frame(model, data, "pinch_site_target", "pinch_site", "site")
 
-        rate = RateLimiter(frequency=200.0, warn=False)
+        rate = RateLimiter(frequency=200.0)
         dt = rate.period
         t = 0.0
         while viewer.is_running():
