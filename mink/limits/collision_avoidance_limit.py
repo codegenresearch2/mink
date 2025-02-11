@@ -39,17 +39,13 @@ class Contact:
         """Return the normal vector of the contact.
 
         The normal vector is calculated by subtracting the start point from the end point of the `fromto` vector.
-        It is then normalized to ensure it has a length of 1.
+        It is then normalized using `mujoco.mju_normalize3`.
 
         Returns:
             np.ndarray: The normal vector of the contact.
         """
         normal = self.fromto[3:] - self.fromto[:3]
-        norm = np.linalg.norm(normal)
-        if norm > 1e-9:
-            return normal / norm
-        else:
-            return normal
+        return mujoco.mju_normalize3(normal)
 
     @property
     def inactive(self) -> bool:
