@@ -1,7 +1,6 @@
 """Collision avoidance limit."""
 
 import itertools
-from dataclasses import dataclass
 from typing import List, Sequence, Union
 
 import mujoco
@@ -17,65 +16,65 @@ CollisionPair = tuple[GeomSequence, GeomSequence]
 CollisionPairs = Sequence[CollisionPair]
 
 
-@dataclass(frozen=True)
-class _Contact:
-    dist: float
-    fromto: np.ndarray
-    geom1: int
-    geom2: int
-    distmax: float
+class Contact:
+    """Details of a contact between two geoms."""
+
+    def __init__(
+        self,
+        dist: float,
+        fromto: np.ndarray,
+        geom1: int,
+        geom2: int,
+        distmax: float,
+    ):
+        self.dist = dist
+        self.fromto = fromto
+        self.geom1 = geom1
+        self.geom2 = geom2
+        self.distmax = distmax
 
     @property
     def normal(self) -> np.ndarray:
+        """Return the normal vector of the contact."""
         normal = self.fromto[3:] - self.fromto[:3]
         return normal / (np.linalg.norm(normal) + 1e-9)
 
     @property
     def inactive(self) -> bool:
+        """Return True if the contact is inactive."""
         return self.dist == self.distmax and not self.fromto.any()
 
 
-def _is_welded_together(model: mujoco.MjModel, geom_id1: int, geom_id2: int) -> bool:
-    """Returns true if the geoms are part of the same body, or if their bodies are
-    welded together."""
-    body1 = model.geom_bodyid[geom_id1]
-    body2 = model.geom_bodyid[geom_id2]
-    weld1 = model.body_weldid[body1]
-    weld2 = model.body_weldid[body2]
-    return weld1 == weld2
+def compute_contact_normal_jacobian(
+    data: mujoco.MjData, contact: Contact
+) -> np.ndarray:
+    """Computes the Jacobian mapping joint velocities to the normal component of
+    the relative Cartesian linear velocity between the geom pair.
 
+    The Jacobian-velocity relationship is given as:
 
-def _are_geom_bodies_parent_child(
-    model: mujoco.MjModel, geom_id1: int, geom_id2: int
-) -> bool:
-    """Returns true if the geom bodies have a parent-child relationship."""
-    body_id1 = model.geom_bodyid[geom_id1]
-    body_id2 = model.geom_bodyid[geom_id2]
+        J dq = n^T (v_2 - v_1)
 
-    # body_weldid is the ID of the body's weld.
-    body_weldid1 = model.body_weldid[body_id1]
-    body_weldid2 = model.body_weldid[body_id2]
+    where:
+    * J is the computed Jacobian.
+    * dq is the joint velocity vector.
+    * n^T is the transpose of the normal pointing from contact.geom1 to
+        contact.geom2.
+    *  v_1, v_2 are the linear components of the Cartesian velocity of the two
+        closest points in contact.geom1 and contact.geom2.
 
-    # weld_parent_id is the ID of the parent of the body's weld.
-    weld_parent_id1 = model.body_parentid[body_weldid1]
-    weld_parent_id2 = model.body_parentid[body_weldid2]
-
-    # weld_parent_weldid is the weld ID of the parent of the body's weld.
-    weld_parent_weldid1 = model.body_weldid[weld_parent_id1]
-    weld_parent_weldid2 = model.body_weldid[weld_parent_id2]
-
-    cond1 = body_weldid1 == weld_parent_weldid2
-    cond2 = body_weldid2 == weld_parent_weldid1
-    return cond1 or cond2
-
-
-def _is_pass_contype_conaffinity_check(
-    model: mujoco.MjModel, geom_id1: int, geom_id2: int
-) -> bool:
-    """Returns true if the geoms pass the contype/conaffinity check."""
-    cond1 = bool(model.geom_contype[geom_id1] & model.geom_conaffinity[geom_id2])
-    cond2 = bool(model.geom_contype[geom_id2] & model.geom_conaffinity[geom_id1])
-    return cond1 or cond2
+    Note: n^T (v_2 - v_1) is a scalar that is positive if the geoms are moving away
+    from each other, and negative if they are moving towards each other.
+    """
+    geom1_body = contact.geom1
+    geom2_body = contact.geom2
+    geom1_contact_pos = contact.fromto[:3]
+    geom2_contact_pos = contact.fromto[3:]
+    jac2 = np.empty((3, self.model.nv))
+    mujoco.mj_jac(self.model, data, jac2, None, geom2_contact_pos, geom2_body)
+    jac1 = np.empty((3, self.model.nv))
+    mujoco.mj_jac(self.model, data, jac1, None, geom1_contact_pos, geom1_body)
+    return contact.normal @ (jac2 - jac1)
 
 
 class CollisionAvoidanceLimit(Limit):
@@ -166,7 +165,7 @@ class CollisionAvoidanceLimit(Limit):
                 upper_bound[idx] = (self.gain * dist / dt) + self.bound_relaxation
             else:
                 upper_bound[idx] = self.bound_relaxation
-            jac = self._compute_contact_normal_jacobian(configuration.data, contact)
+            jac = compute_contact_normal_jacobian(configuration.data, contact)
             coefficient_matrix[idx] = -jac
         return Constraint(G=coefficient_matrix, h=upper_bound)
 
@@ -174,7 +173,7 @@ class CollisionAvoidanceLimit(Limit):
 
     def _compute_contact_with_minimum_distance(
         self, data: mujoco.MjData, geom1_id: int, geom2_id: int
-    ) -> _Contact:
+    ) -> Contact:
         """Returns the smallest signed distance between a geom pair."""
         fromto = np.empty(6)
         dist = mujoco.mj_geomDistance(
@@ -185,62 +184,9 @@ class CollisionAvoidanceLimit(Limit):
             self.collision_detection_distance,
             fromto,
         )
-        return _Contact(
+        return Contact(
             dist, fromto, geom1_id, geom2_id, self.collision_detection_distance
         )
-
-    def _compute_contact_normal_jacobian(
-        self, data: mujoco.MjData, contact: _Contact
-    ) -> np.ndarray:
-        """Computes the Jacobian mapping joint velocities to the normal component of
-        the relative Cartesian linear velocity between the geom pair.
-
-        The Jacobian-velocity relationship is given as:
-
-            J dq = n^T (v_2 - v_1)
-
-        where:
-        * J is the computed Jacobian.
-        * dq is the joint velocity vector.
-        * n^T is the transpose of the normal pointing from contact.geom1 to
-            contact.geom2.
-        *  v_1, v_2 are the linear components of the Cartesian velocity of the two
-            closest points in contact.geom1 and contact.geom2.
-
-        Note: n^T (v_2 - v_1) is a scalar that is positive if the geoms are moving away
-        from each other, and negative if they are moving towards each other.
-        """
-        geom1_body = self.model.geom_bodyid[contact.geom1]
-        geom2_body = self.model.geom_bodyid[contact.geom2]
-        geom1_contact_pos = contact.fromto[:3]
-        geom2_contact_pos = contact.fromto[3:]
-        jac2 = np.empty((3, self.model.nv))
-        mujoco.mj_jac(self.model, data, jac2, None, geom2_contact_pos, geom2_body)
-        jac1 = np.empty((3, self.model.nv))
-        mujoco.mj_jac(self.model, data, jac1, None, geom1_contact_pos, geom1_body)
-        return contact.normal @ (jac2 - jac1)
-
-    def _homogenize_geom_id_list(self, geom_list: GeomSequence) -> List[int]:
-        """Take a heterogeneous list of geoms (specified via ID or name) and return
-        a homogenous list of IDs (int)."""
-        list_of_int: list[int] = []
-        for g in geom_list:
-            if isinstance(g, int):
-                list_of_int.append(g)
-            else:
-                assert isinstance(g, str)
-                list_of_int.append(self.model.geom(g).id)
-        return list_of_int
-
-    def _collision_pairs_to_geom_id_pairs(self, collision_pairs: CollisionPairs):
-        geom_id_pairs = []
-        for collision_pair in collision_pairs:
-            id_pair_A = self._homogenize_geom_id_list(collision_pair[0])
-            id_pair_B = self._homogenize_geom_id_list(collision_pair[1])
-            id_pair_A = list(set(id_pair_A))
-            id_pair_B = list(set(id_pair_B))
-            geom_id_pairs.append((id_pair_A, id_pair_B))
-        return geom_id_pairs
 
     def _construct_geom_id_pairs(self, geom_pairs):
         """Returns a set of geom ID pairs for all possible geom-geom collisions.
@@ -267,4 +213,26 @@ class CollisionAvoidanceLimit(Limit):
                 )
                 if weld_body_cond and parent_child_cond and contype_conaffinity_cond:
                     geom_id_pairs.append((min(geom_a, geom_b), max(geom_a, geom_b)))
+        return geom_id_pairs
+
+    def _homogenize_geom_id_list(self, geom_list: GeomSequence) -> List[int]:
+        """Take a heterogeneous list of geoms (specified via ID or name) and return
+        a homogenous list of IDs (int)."""
+        list_of_int: list[int] = []
+        for g in geom_list:
+            if isinstance(g, int):
+                list_of_int.append(g)
+            else:
+                assert isinstance(g, str)
+                list_of_int.append(self.model.geom(g).id)
+        return list_of_int
+
+    def _collision_pairs_to_geom_id_pairs(self, collision_pairs: CollisionPairs):
+        geom_id_pairs = []
+        for collision_pair in collision_pairs:
+            id_pair_A = self._homogenize_geom_id_list(collision_pair[0])
+            id_pair_B = self._homogenize_geom_id_list(collision_pair[1])
+            id_pair_A = list(set(id_pair_A))
+            id_pair_B = list(set(id_pair_B))
+            geom_id_pairs.append((id_pair_A, id_pair_B))
         return geom_id_pairs
