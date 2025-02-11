@@ -12,7 +12,7 @@ import toml
 project = "mink"
 
 # Load version from pyproject.toml
-pyproject_toml = Path("pyproject.toml")
+pyproject_toml = Path(__file__).resolve().parent / ".." / "pyproject.toml"
 if pyproject_toml.exists():
     pyproject = toml.load(pyproject_toml)
     version = pyproject["tool"]["poetry"]["version"]
