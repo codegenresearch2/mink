@@ -24,15 +24,15 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model, data, dof_ids, actuator_ids):
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, dof_ids: np.ndarray, actuator_ids: np.ndarray) -> None:
     """Compensate for gravity using the Jacobian transpose method."""
     mujoco.mj_forward(model, data)
     gravity_compensation = np.zeros_like(data.qacc)
     for i in range(model.nv):
         gravity_compensation += np.dot(model.jacc[i], data.qvel[i]) * model.gravity[i]
-    data.ctrl[actuator_ids] = np.dot(model.jacc.T, gravity_compensation)[dof_ids]
+    data.qfrc_applied[dof_ids] = np.dot(model.jacc.T, gravity_compensation)[dof_ids]
 
-def get_subtree_geom_ids(model, body_id):
+def get_subtree_geom_ids(model: mujoco.MjModel, body_id: int) -> list[int]:
     subtree_body_ids = []
     queue = [body_id]
     while queue:
@@ -157,6 +157,7 @@ if __name__ == "__main__":
                 ):
                     break
 
+            data.ctrl[actuator_ids] = configuration.q[dof_ids]
             compensate_gravity(model, data, dof_ids, actuator_ids)
             mujoco.mj_step(model, data)
 
