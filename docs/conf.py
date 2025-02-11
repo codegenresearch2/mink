@@ -29,21 +29,26 @@ source_suffix = {".rst": "restructuredtext"}
 pygments_style = "sphinx"
 
 # Autodoc options
-autodoc_typehints = "description"
+autodoc_typehints = "both"
 autodoc_class_signature = "separated"
 autodoc_default_options = {
     'members': True,
     'member-order': 'bysource',
     'special-members': '__init__',
     'undoc-members': True,
-    'inherited-members': True,
-    'exclude-members': '__weakref__',
+    'inherited-members': False,
+    'exclude-members': '__weakref__, __init__, __post_init__, __new__',
 }
 
 # Napoleon settings
 napoleon_numpy_docstring = True
 napoleon_use_rtype = True
 napoleon_use_param = True
+
+# Autodoc type aliases
+autodoc_type_aliases = {
+    "npt.ArrayLike": "ArrayLike",
+}
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
