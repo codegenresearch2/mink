@@ -4,6 +4,7 @@ import mujoco.viewer
 import numpy as np
 from loop_rate_limiters import RateLimiter
 import mink
+from typing import Sequence, Optional
 
 _HERE = Path(__file__).parent
 _XML = _HERE / "aloha" / "scene.xml"
@@ -37,11 +38,12 @@ def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: 
         qfrc_applied = data.qfrc_applied
     qfrc_applied[:] = 0  # Reset the qfrc_applied array to avoid unintended accumulation
     for subtree_id in subtree_ids:
-        subtree_mass = 0
-        subtree_com = np.zeros(3)
-        subtree_J = np.zeros((6, model.nv))
-        mujoco.mj_inertia_subtree(model, data.mocap_pos, subtree_id, subtree_mass, subtree_com, subtree_J)
-        gravity_compensation = -grav * subtree_mass
+        total_mass = 0
+        jac = np.zeros((6, model.nv))
+        mujoco.mj_jacSubtree(model, data.mocap_pos, subtree_id, jac)
+        for i in range(jac.shape[1]):
+            total_mass += model.body(model.joint(i).parent).mass
+        gravity_compensation = -grav * total_mass
         qfrc_applied[model.joint_subtree(subtree_id)[0].dofadr] = gravity_compensation
 
 def construct_model() -> mujoco.MjModel:
