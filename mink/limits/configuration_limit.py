@@ -4,7 +4,7 @@ import mujoco
 import numpy as np
 
 from ..configuration import Configuration
-from ..constants import qpos_width
+from ..constants import dof_width
 from .exceptions import LimitDefinitionError
 from .limit import Constraint, Limit
 
@@ -45,7 +45,7 @@ class ConfigurationLimit(Limit):
             jnt_type = model.jnt_type[jnt]
             if jnt_type == mujoco.mjtJoint.mjJNT_FREE:
                 continue
-            jnt_dim = qpos_width(jnt_type)
+            jnt_dim = dof_width(jnt_type)
             jnt_range = model.jnt_range[jnt]
             padr = model.jnt_qposadr[jnt]
             if not model.jnt_limited[jnt]:
