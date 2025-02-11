@@ -45,11 +45,12 @@ class ComTask(Task):
         cost = np.atleast_1d(cost)
         if cost.ndim != 1 or cost.shape[0] not in (1, self.k):
             raise TaskDefinitionError(
-                f"ComTask cost must be a vector of shape (1,) or ({self.k},). Got {cost.shape}"
+                f"ComTask cost must be a vector of shape (1,) or ({self.k},). Got {cost.shape}. "
+                f"A shape of (1,) means identical cost for all CoM coordinates."
             )
         if not np.all(cost >= 0):
             raise TaskDefinitionError(
-                f"ComTask cost must be non-negative. Got {cost}"
+                f"ComTask cost must be >= 0. Got {cost}."
             )
         self.cost[:] = cost
 
@@ -62,7 +63,7 @@ class ComTask(Task):
         target_com = np.atleast_1d(target_com)
         if target_com.ndim != 1 or target_com.shape[0] != self.k:
             raise InvalidTarget(
-                f"Expected target CoM to have shape ({self.k},) but got {target_com.shape}"
+                f"Expected target CoM to have shape ({self.k},) but got {target_com.shape}."
             )
         self.target_com = target_com.copy()
 
