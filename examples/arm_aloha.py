@@ -24,8 +24,15 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
+def compensate_gravity(model, data, dof_ids, actuator_ids):
+    """Compensate for gravity using the Jacobian transpose method."""
+    mujoco.mj_forward(model, data)
+    gravity_compensation = np.zeros_like(data.qacc)
+    for i in range(model.nv):
+        gravity_compensation += np.dot(model.jacc[i], data.qvel[i]) * model.gravity[i]
+    data.ctrl[actuator_ids] = np.dot(model.jacc.T, gravity_compensation)[dof_ids]
 
-def get_subtree_body_ids(model, body_id):
+def get_subtree_geom_ids(model, body_id):
     subtree_body_ids = []
     queue = [body_id]
     while queue:
@@ -33,19 +40,7 @@ def get_subtree_body_ids(model, body_id):
         subtree_body_ids.append(current_body_id)
         for child_body_id in model.body_children(current_body_id):
             queue.append(child_body_id)
-    return subtree_body_ids
-
-
-def get_body_geom_ids(model, body_id):
-    geom_ids = []
-    queue = [body_id]
-    while queue:
-        current_body_id = queue.pop(0)
-        geom_ids.extend(model.body_geom(current_body_id))
-        for child_body_id in model.body_children(current_body_id):
-            queue.append(child_body_id)
-    return geom_ids
-
+    return [model.geom(geom_id).id for geom_id in model.body_geom(subtree_body_ids[0])]
 
 if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
@@ -86,11 +81,11 @@ if __name__ == "__main__":
     # geoms starting at subtree "right wrist" - "table",
     # geoms starting at subtree "left wrist"  - "table",
     # geoms starting at subtree "right wrist" - geoms starting at subtree "left wrist".
-    l_wrist_geoms = get_body_geom_ids(model, model.body("left/wrist_link").id)
-    r_wrist_geoms = get_body_geom_ids(model, model.body("right/wrist_link").id)
-    l_geoms = get_body_geom_ids(model, model.body("left/upper_arm_link").id)
-    r_geoms = get_body_geom_ids(model, model.body("right/upper_arm_link").id)
-    frame_geoms = get_body_geom_ids(model, model.body("metal_frame").id)
+    l_wrist_geoms = get_subtree_geom_ids(model, model.body("left/wrist_link").id)
+    r_wrist_geoms = get_subtree_geom_ids(model, model.body("right/wrist_link").id)
+    l_geoms = get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
+    r_geoms = get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
+    frame_geoms = get_subtree_geom_ids(model, model.body("metal_frame").id)
     collision_pairs = [
         (l_wrist_geoms, r_wrist_geoms),
         (l_geoms + r_geoms, frame_geoms + ["table"]),
@@ -151,7 +146,7 @@ if __name__ == "__main__":
                 l_err = l_ee_task.compute_error(configuration)
                 l_pos_achieved = np.linalg.norm(l_err[:3]) <= pos_threshold
                 l_ori_achieved = np.linalg.norm(l_err[3:]) <= ori_threshold
-                r_err = l_ee_task.compute_error(configuration)
+                r_err = r_ee_task.compute_error(configuration)
                 r_pos_achieved = np.linalg.norm(r_err[:3]) <= pos_threshold
                 r_ori_achieved = np.linalg.norm(r_err[3:]) <= ori_threshold
                 if (
@@ -162,7 +157,7 @@ if __name__ == "__main__":
                 ):
                     break
 
-            data.ctrl[actuator_ids] = configuration.q[dof_ids]
+            compensate_gravity(model, data, dof_ids, actuator_ids)
             mujoco.mj_step(model, data)
 
             # Visualize at fixed FPS.
