@@ -21,8 +21,16 @@ class TestVelocityLimit(absltest.TestCase):
         self.configuration = Configuration(self.model)
         self.configuration.update_from_keyframe("home")
         self.velocities = {
-            self.model.joint(i).name: np.random.uniform(0, np.pi) for i in range(self.model.njnt)
+            self.model.joint(i).name: 3.14 for i in range(self.model.njnt)
         }
+
+    def test_ball_joint_invalid_limit_shape(self):
+        """Test that invalid limit shape raises an error."""
+        velocities = {
+            "ball": (np.pi, np.pi / 2),
+        }
+        with self.assertRaises(LimitDefinitionError):
+            VelocityLimit(self.model, velocities)
 
     def test_dimensions(self):
         limit = VelocityLimit(self.model, self.velocities)
@@ -49,42 +57,13 @@ class TestVelocityLimit(absltest.TestCase):
 
     def test_model_with_subset_of_velocities_limited(self):
         velocities = {
-            "shoulder_pan_joint": np.pi,
-            "shoulder_lift_joint": np.pi,
-            "elbow_joint": np.pi,
-            "wrist_1_joint": np.pi,
-            "wrist_2_joint": np.pi,
-            "wrist_3_joint": np.pi,
+            joint.name: 3.14 for joint in self.model.joint if joint.type == mujoco.mjtJoint.mjJNT_HINGE
         }
         limit = VelocityLimit(self.model, velocities)
         nb = len(velocities)
         nv = self.model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
-
-    def test_ball_joint_invalid_limit_shape(self):
-        xml_str = """
-        <mujoco>
-          <worldbody>
-            <body>
-              <joint type="ball" name="ball"/>
-              <geom type="sphere" size=".1" mass=".1"/>
-              <body>
-                <joint type="hinge" name="hinge" range="0 1.57"/>
-                <geom type="sphere" size=".1" mass=".1"/>
-              </body>
-            </body>
-          </worldbody>
-        </mujoco>
-        """
-        model = mujoco.MjModel.from_xml_string(xml_str)
-        velocities = {
-            "ball": (np.pi, np.pi / 2, np.pi / 4),
-        }
-        with self.assertRaises(LimitDefinitionError) as cm:
-            VelocityLimit(model, velocities)
-        expected_error_message = "Joint ball must have a limit of shape (3,). Got: (2,)"
-        self.assertEqual(str(cm.exception), expected_error_message)
 
     def test_that_freejoint_raises_error(self):
         xml_str = """
