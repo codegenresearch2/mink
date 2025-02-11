@@ -19,7 +19,7 @@ class TestVelocityLimit(absltest.TestCase):
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("home")  # Changed to "home"
+        self.configuration.update_from_keyframe("stand")  # Changed to "stand"
         self.velocities = {
             self.model.joint(i).name: [3.14] * self.model.joint(i).dof
             for i in range(self.model.njnt)
