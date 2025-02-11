@@ -5,17 +5,18 @@ import numpy as np
 from absl.testing import absltest
 from robot_descriptions.loaders.mujoco import load_robot_description
 from mujoco import MjModel, MjData, compute_contact_normal_jacobian
-from mink.limits import CollisionAvoidanceLimit
-from mink.utils import get_body_geom_ids
+try:
+    from mink import Configuration
+except ImportError:
+    # Placeholder for the Configuration class if mink is not available
+    class Configuration:
+        def __init__(self, model):
+            self.model = model
+            self.qpos = np.zeros(model.nv)
 
-class Configuration:
-    def __init__(self, model):
-        self.model = model
-        self.qpos = np.zeros(model.nv)
-
-    def update_from_keyframe(self, keyframe_name):
-        # Placeholder for actual implementation
-        pass
+        def update_from_keyframe(self, keyframe_name):
+            # Placeholder for actual implementation
+            pass
 
 class TestCollisionAvoidanceLimit(absltest.TestCase):
     """Test collision avoidance limit."""
