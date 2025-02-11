@@ -24,6 +24,16 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
+def compensate_gravity(model, data, subtree_ids, qfrc_applied=None):
+    if qfrc_applied is None:
+        qfrc_applied = np.zeros_like(data.qfrc_applied)
+    
+    for subtree_id in subtree_ids:
+        body_ids = mujoco.mj_get_body_parentid(model, subtree_id, True)
+        for body_id in body_ids:
+            qfrc_applied[body_id] = -np.array(model.body(model.name2id(body_id)).mass) * model.opt.gravity
+    
+    data.qfrc_applied[:] = qfrc_applied
 
 if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
@@ -60,6 +70,10 @@ if __name__ == "__main__":
         posture_task := mink.PostureTask(model, cost=1e-4),
     ]
 
+    # Define subtree IDs for left and right arms
+    left_arm_subtree_ids = [model.body("left/upper_arm_link").id, model.body("left/forearm_link").id, model.body("left/wrist_link").id]
+    right_arm_subtree_ids = [model.body("right/upper_arm_link").id, model.body("right/forearm_link").id, model.body("right/wrist_link").id]
+
     # Enable collision avoidance between the following geoms:
     # geoms starting at subtree "right wrist" - "table",
     # geoms starting at subtree "left wrist"  - "table",
@@ -75,7 +89,7 @@ if __name__ == "__main__":
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
-        geom_pairs=set(tuple(pair) for pair in collision_pairs),  # type: ignore
+        geom_pairs=collision_pairs,  # type: ignore
         minimum_distance_from_collisions=0.05,
         collision_detection_distance=0.1,
     )
@@ -89,9 +103,9 @@ if __name__ == "__main__":
     l_mid = model.body("left/target").mocapid[0]
     r_mid = model.body("right/target").mocapid[0]
     solver = "quadprog"
-    pos_threshold = 1e-2
-    ori_threshold = 1e-2
-    max_iters = 2
+    pos_threshold = 5e-3
+    ori_threshold = 5e-3
+    max_iters = 5
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -110,6 +124,10 @@ if __name__ == "__main__":
 
         rate = RateLimiter(frequency=200.0)
         while viewer.is_running():
+            # Apply gravity compensation
+            compensate_gravity(model, data, left_arm_subtree_ids)
+            compensate_gravity(model, data, right_arm_subtree_ids)
+
             # Update task targets.
             l_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "left/target"))
             r_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "right/target"))
