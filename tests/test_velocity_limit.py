@@ -19,9 +19,9 @@ class TestVelocityLimit(absltest.TestCase):
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("home")
+        self.configuration.update_from_keyframe("stand")
         self.velocities = {
-            self.model.joint(i).name: 3.14 for i in range(self.model.njnt)
+            self.model.joint(i).name: 3.14 for i in range(1, self.model.njnt)
         }
 
     def test_ball_joint_invalid_limit_shape(self):
@@ -56,11 +56,11 @@ class TestVelocityLimit(absltest.TestCase):
         self.assertIsNone(h)
 
     def test_model_with_subset_of_velocities_limited(self):
-        velocities = {
+        partial_velocities = {
             joint.name: 3.14 for joint in self.model.joint if joint.type == mujoco.mjtJoint.mjJNT_HINGE
         }
-        limit = VelocityLimit(self.model, velocities)
-        nb = len(velocities)
+        limit = VelocityLimit(self.model, partial_velocities)
+        nb = len(partial_velocities)
         nv = self.model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
