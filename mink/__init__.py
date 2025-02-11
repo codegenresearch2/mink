@@ -20,7 +20,7 @@ HOME_QPOS = [
     1.0593, 0.638801, 0.391599, 0.57284,
 ]
 
-# Error Handling
+# Custom Exceptions
 class MinkError(Exception):
     pass
 
