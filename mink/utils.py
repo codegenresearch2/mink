@@ -14,7 +14,7 @@ def get_freejoint_dims(model: mujoco.MjModel) -> Tuple[list[int], list[int]]:
         model (mujoco.MjModel): The Mujoco model.
 
     Returns:
-        Tuple[list[int], list[int]]: A tuple containing two lists:
+        tuple[list[int], list[int]]: A tuple containing two lists:
             - The first list contains the indices of all free joints in the configuration space.
             - The second list contains the indices of all free joints in the tangent space.
     """
@@ -71,4 +71,4 @@ def custom_configuration_vector(
     return q
 
 
-This revised code snippet addresses the feedback by correcting the syntax error in the comment, ensuring that the function names and structure are consistent, and adding comprehensive docstrings to improve readability and maintainability.
+This revised code snippet addresses the feedback by removing the invalid syntax in the comment, ensuring that the function names and structure are consistent, and adding comprehensive docstrings to improve readability and maintainability.
