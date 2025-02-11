@@ -6,13 +6,16 @@
 # -- Project information -----------------------------------------------------
 # Retrieve project information from pyproject.toml
 import toml
+from pathlib import Path
 
-with open("pyproject.toml", "r") as file:
-    pyproject = toml.load(file)
+# Load the project information
+pyproject_path = Path("pyproject.toml")
+pyproject = toml.load(pyproject_path)
 
 project = pyproject["project"]["name"]
 version = pyproject["project"]["version"]
 author = pyproject["project"]["authors"][0]["name"]
+copyright = "2024, Kevin Zakka"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
