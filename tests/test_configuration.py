@@ -91,3 +91,42 @@ class TestConfiguration(absltest.TestCase):
         configuration.update(q=self.q_ref)
         with self.assertRaises(mink.NotWithinConfigurationLimits):
             configuration.check_limits()
+
+    def test_initialize_from_q(self):
+        """Test initialization from a specific configuration."""
+        q_init = np.zeros(self.model.nq)
+        configuration = mink.Configuration(self.model, q_init)
+        np.testing.assert_array_equal(configuration.q, q_init)
+
+    def test_check_limits_freejoint(self):
+        """Check limits functionality for free joints."""
+        xml_str = """
+        <mujoco>
+          <worldbody>
+            <body>
+              <joint type="free" name="floating"/>
+              <geom type="sphere" size=".1" mass=".1"/>
+              <body>
+                <joint type="hinge" name="hinge" range="0 1.57" limited="true"/>
+                <geom type="sphere" size=".1" mass=".1"/>
+              </body>
+            </body>
+          </worldbody>
+        </mujoco>
+        """
+        model = mujoco.MjModel.from_xml_string(xml_str)
+        configuration = mink.Configuration(model)
+        configuration.q = np.zeros(model.nv)
+        configuration.check_limits()
+
+    def test_site_jacobian(self):
+        """Test the Jacobian of a site."""
+        site_name = "attachment_site"
+        configuration = mink.Configuration(self.model)
+        configuration.update()
+        jacobian = configuration.get_frame_jacobian(site_name, "site")
+        self.assertEqual(jacobian.shape, (3, self.model.nv))
+
+
+if __name__ == "__main__":
+    absltest.main()
