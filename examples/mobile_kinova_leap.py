@@ -86,10 +86,8 @@ if __name__ == "__main__":
         lm_damping=1.0,
     )
 
-    # When move the base, mainly focus on the motion on xy plane, minimize the rotation.
     posture_cost = np.zeros((model.nv,))
     posture_cost[2] = 1e-3  # Mobile Base.
-    # posture_cost[-16:] = 5e-2  # Leap Hand.
     posture_cost[-16:] = 1e-3  # Leap Hand.
 
     posture_task = mink.PostureTask(model, cost=posture_cost)
@@ -122,7 +120,6 @@ if __name__ == "__main__":
         mink.ConfigurationLimit(model),
     ]
 
-    # IK settings.
     solver = "quadprog"
     pos_threshold = 1e-4
     ori_threshold = 1e-4
@@ -146,7 +143,6 @@ if __name__ == "__main__":
         posture_task.set_target_from_configuration(configuration)
         mujoco.mj_forward(model, data)
 
-        # Initialize the mocap target at the end-effector site.
         mink.move_mocap_to_frame(model, data, "pinch_site_target", "pinch_site", "site")
         for finger in fingers:
             mink.move_mocap_to_frame(
@@ -155,15 +151,13 @@ if __name__ == "__main__":
 
         T_eef_prev = configuration.get_transform_frame_to_world("pinch_site", "site")
 
-        rate = RateLimiter(frequency=50.0, warn=False)
+        rate = RateLimiter(frequency=50.0)
         dt = rate.period
         t = 0.0
         while viewer.is_running():
-            # Update task target.
             T_wt = mink.SE3.from_mocap_name(model, data, "pinch_site_target")
             end_effector_task.set_target(T_wt)
 
-            # Update finger tasks.
             for finger, task in zip(fingers, finger_tasks):
                 T_pm = configuration.get_transform(
                     f"{finger}_target", "body", "leap_right/palm_lower", "body"
@@ -182,7 +176,6 @@ if __name__ == "__main__":
                     T_w_mocap_new.rotation().wxyz
                 )
 
-            # Compute velocity and integrate into the next configuration.
             for i in range(max_iters):
                 if key_callback.fix_base:
                     vel = mink.solve_ik(
@@ -192,7 +185,6 @@ if __name__ == "__main__":
                     vel = mink.solve_ik(configuration, tasks, rate.dt, solver, 1e-3)
                 configuration.integrate_inplace(vel, rate.dt)
 
-                # Exit condition.
                 pos_achieved = True
                 ori_achieved = True
                 err = end_effector_task.compute_error(configuration)
@@ -209,7 +201,6 @@ if __name__ == "__main__":
 
             T_eef_prev = T_eef.copy()
 
-            # Visualize at fixed FPS.
             viewer.sync()
             rate.sleep()
             t += dt
