@@ -46,7 +46,7 @@ class VelocityLimit(Limit):
         for joint_name, max_vel in velocities.items():
             jid = model.joint(joint_name).id
             jnt_type = model.jnt_type[jid]
-            # Retrieve joint type before checking for free joint
+            # Retrieve joint type after getting the joint ID for clarity
             if jnt_type == mujoco.mjtJoint.mjJNT_FREE:
                 raise LimitDefinitionError(f"Free joint {joint_name} is not supported")
             vdim = dof_width(jnt_type)
