@@ -4,10 +4,22 @@ import itertools
 import numpy as np
 from absl.testing import absltest
 from robot_descriptions.loaders.mujoco import load_robot_description
-from mink import Configuration
 from mink.limits import CollisionAvoidanceLimit
 from mink.utils import get_body_geom_ids
-from mujoco import MjModel, MjData, Contact, compute_contact_normal_jacobian
+
+try:
+    from mujoco import MjModel, MjData, compute_contact_normal_jacobian
+except ImportError:
+    # If the import fails, we need to handle it gracefully.
+    # This is a placeholder for when the `mujoco` module is not available.
+    class MjModel:
+        pass
+
+    class MjData:
+        pass
+
+    def compute_contact_normal_jacobian(*args, **kwargs):
+        raise ImportError("The `mujoco` module is not available.")
 
 
 class TestCollisionAvoidanceLimit(absltest.TestCase):
@@ -81,17 +93,22 @@ class TestCollisionAvoidanceLimit(absltest.TestCase):
         )
 
         # Compute the contact normal Jacobian using MuJoCo
-        contact = Contact(model)
-        contact.geom1 = g1[0]
-        contact.geom2 = g2[0]
-        contact_normal_jac = compute_contact_normal_jacobian(model, data, contact)
+        contact_jacobians = []
+        for geom1 in g1:
+            for geom2 in g2:
+                contact = Contact()
+                contact.geom1 = geom1
+                contact.geom2 = geom2
+                contact_normal_jac = compute_contact_normal_jacobian(model, data, contact)
+                contact_jacobians.append(contact_normal_jac)
 
         # Compute the contact normal Jacobian using the limit
         G, h = limit.compute_qp_inequalities(self.configuration, 1e-3)
-        computed_jac = G[0, :]  # Assuming we are checking the first contact pair
+        computed_jacobians = [G[i, :] for i in range(len(contact_jacobians))]
 
         # Compare the computed Jacobian with MuJoCo's contact normal Jacobian
-        np.testing.assert_allclose(computed_jac, contact_normal_jac, rtol=1e-5, atol=1e-8)
+        for computed_jac, contact_jac in zip(computed_jacobians, contact_jacobians):
+            np.testing.assert_allclose(computed_jac, contact_jac, rtol=1e-5, atol=1e-8)
 
 
 if __name__ == "__main__":
