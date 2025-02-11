@@ -48,20 +48,21 @@ if __name__ == "__main__":
     configuration = mink.Configuration(model)
 
     tasks = [
-        l_ee_task := mink.FrameTask(
+        mink.FrameTask(
             frame_name="left/gripper",
             frame_type="site",
             position_cost=1.0,
             orientation_cost=1.0,
             lm_damping=1.0,
         ),
-        r_ee_task := mink.FrameTask(
+        mink.FrameTask(
             frame_name="right/gripper",
             frame_type="site",
             position_cost=1.0,
             orientation_cost=1.0,
             lm_damping=1.0,
         ),
+        mink.PostureTask(joint_names=joint_names, position_cost=1e-4, velocity_cost=0.1),
     ]
 
     # Enable collision avoidance between the following geoms:
@@ -112,13 +113,16 @@ if __name__ == "__main__":
         mink.move_mocap_to_frame(model, data, "left/target", "left/gripper", "site")
         mink.move_mocap_to_frame(model, data, "right/target", "right/gripper", "site")
 
-        # Initialize posture task with the model and a cost parameter
+        # Set target for posture task from current configuration
         posture_task = mink.PostureTask(joint_names=joint_names, position_cost=1e-4, velocity_cost=0.1)
+        posture_task.set_target_from_configuration(configuration)
         limits.append(posture_task)
 
         rate = RateLimiter(frequency=200.0)
         while viewer.is_running():
             # Update task targets.
+            l_ee_task = tasks[0]
+            r_ee_task = tasks[1]
             l_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "left/target"))
             r_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "right/target"))
 
