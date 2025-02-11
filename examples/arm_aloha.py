@@ -1,10 +1,8 @@
 from pathlib import Path
-
+import numpy as np
 import mujoco
 import mujoco.viewer
-import numpy as np
 from loop_rate_limiters import RateLimiter
-
 import mink
 
 _HERE = Path(__file__).parent
@@ -31,8 +29,8 @@ def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: 
     Args:
         model (mujoco.MjModel): The MuJoCo model object.
         data (mujoco.MjData): The MuJoCo data object.
-        subtree_ids (list[int]): List of subtree IDs to apply gravity compensation to.
-        qfrc_applied (np.ndarray, optional): Array to store the computed forces. If not provided, a new array is created.
+        subtree_ids (Sequence[int]): List of subtree IDs to apply gravity compensation to.
+        qfrc_applied (Optional[np.ndarray]): Array to store the computed forces. If not provided, a new array is created.
     """
     if qfrc_applied is None:
         qfrc_applied = np.zeros_like(data.qfrc_applied)
@@ -80,9 +78,9 @@ if __name__ == "__main__":
         posture_task := mink.PostureTask(model, cost=1e-4),
     ]
 
-    # Define subtree IDs for left and right arms
-    left_arm_subtree_ids = [model.body("left/upper_arm_link").id, model.body("left/forearm_link").id, model.body("left/wrist_link").id]
-    right_arm_subtree_ids = [model.body("right/upper_arm_link").id, model.body("right/forearm_link").id, model.body("right/wrist_link").id]
+    # Define base links for left and right arms
+    left_arm_base_id = model.body("left/base_link").id
+    right_arm_base_id = model.body("right/base_link").id
 
     # Enable collision avoidance between the following geoms:
     # geoms starting at subtree "right wrist" - "table",
@@ -135,8 +133,7 @@ if __name__ == "__main__":
         rate = RateLimiter(frequency=200.0)
         while viewer.is_running():
             # Apply gravity compensation
-            compensate_gravity(model, data, left_arm_subtree_ids)
-            compensate_gravity(model, data, right_arm_subtree_ids)
+            compensate_gravity(model, data, [left_arm_base_id, right_arm_base_id])
 
             # Update task targets.
             l_ee_task.set_target(mink.SE3.from_mocap_name(model, data, "left/target"))
