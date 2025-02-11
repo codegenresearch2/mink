@@ -9,7 +9,7 @@ import numpy as np
 from .base import MatrixLieGroup
 from .utils import get_epsilon, skew
 
-_IDENTITIY_WXYZ = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
+_IDENTITY_WXYZ = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
 _INVERT_QUAT_SIGN = np.array([1.0, -1.0, -1.0, -1.0], dtype=np.float64)
 
 
@@ -38,7 +38,7 @@ class SO3(MatrixLieGroup):
         """Validate the shape of the wxyz array."""
         if self.wxyz.shape != (self.parameters_dim,):
             raise ValueError(
-                "Expected wxyz to be a length 4 vector but got {}.".format(self.wxyz.shape[0])
+                f"Expected wxyz to be a length 4 vector but got {self.wxyz.shape[0]}."
             )
 
     def __repr__(self) -> str:
@@ -89,7 +89,7 @@ class SO3(MatrixLieGroup):
     @classmethod
     def identity(cls) -> SO3:
         """Return the identity SO3 instance."""
-        return cls(wxyz=_IDENTITIY_WXYZ)
+        return cls(wxyz=_IDENTITY_WXYZ)
 
     @classmethod
     def sample_uniform(cls) -> SO3:
