@@ -55,6 +55,9 @@ if __name__ == "__main__":
     velocity_limit = mink.VelocityLimit(model, max_velocities)
     limits.append(velocity_limit)
 
+    # Initialize the mocap target at the end-effector site.
+    mid = model.body("target").mocapid[0]
+
     # IK settings.
     solver = "quadprog"
     pos_threshold = 1e-4
