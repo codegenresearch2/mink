@@ -34,6 +34,23 @@ if __name__ == "__main__":
 
     ## =================== ##
 
+    # Validate joint limits
+    expected_joint_limits = np.array([
+        [-np.pi, np.pi],  # shoulder_pan
+        [-np.pi, np.pi],  # shoulder_lift
+        [-np.pi, np.pi],  # elbow
+        [-np.pi, np.pi],  # wrist_1
+        [-np.pi, np.pi],  # wrist_2
+        [-np.pi, np.pi],  # wrist_3
+        [-np.pi, np.pi],  # wrist_4
+        [-np.pi, np.pi],  # wrist_5
+        [-np.pi, np.pi],  # wrist_6
+    ])
+
+    for i, joint_name in enumerate(["shoulder_pan", "shoulder_lift", "elbow", "wrist_1", "wrist_2", "wrist_3", "wrist_4", "wrist_5", "wrist_6"]):
+        assert np.all(data.qpos[model.joint(joint_name).qposadr:model.joint(joint_name).qposadr+model.joint(joint_name).nq] >= expected_joint_limits[i, 0])
+        assert np.all(data.qpos[model.joint(joint_name).qposadr:model.joint(joint_name).qposadr+model.joint(joint_name).nq] <= expected_joint_limits[i, 1])
+
     # IK settings.
     solver = "quadprog"
     pos_threshold = 1e-4
@@ -67,6 +84,7 @@ if __name__ == "__main__":
                 pos_achieved = np.linalg.norm(err[:3]) <= pos_threshold
                 ori_achieved = np.linalg.norm(err[3:]) <= ori_threshold
                 if pos_achieved and ori_achieved:
+                    print(f"Exiting after {i} iterations.")
                     break
 
             data.ctrl = configuration.q
