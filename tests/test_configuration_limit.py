@@ -42,14 +42,17 @@ class TestConfigurationLimit(absltest.TestCase):
 
     def test_indices(self):
         limit = ConfigurationLimit(self.model)
-        expected = np.arange(6, self.model.nv)
-        self.assertTrue(np.allclose(limit.indices, expected))
+        expected = np.arange(6, self.model.nv)  # Freejoint (0-5) is not limited.
+        np.testing.assert_allclose(limit.indices, expected)
 
     def test_model_with_no_limit(self):
         empty_model = mujoco.MjModel.from_xml_string("<mujoco></mujoco>")
         empty_bounded = ConfigurationLimit(empty_model)
         self.assertEqual(len(empty_bounded.indices), 0)
         self.assertIsNone(empty_bounded.projection_matrix)
+        G, h = empty_bounded.compute_qp_inequalities(self.configuration, 1e-3)
+        self.assertIsNone(G)
+        self.assertIsNone(h)
 
     def test_model_with_subset_of_velocities_limited(self):
         xml_str = """
