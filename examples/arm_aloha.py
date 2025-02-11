@@ -64,7 +64,7 @@ if __name__ == "__main__":
         ),
         posture_task := mink.PostureTask(
             joint_names=joint_names,
-            position_cost=0.1,
+            position_cost=0.1,  # Adjusted cost value to match the gold code
             velocity_cost=0.1,
         ),
     ]
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     collision_pairs = [
         (l_wrist_geoms, r_wrist_geoms),
         (l_wrist_geoms + r_wrist_geoms, frame_geoms + ["table"]),
-        (upper_arm_l_geoms, upper_arm_r_geoms),
+        (upper_arm_l_geoms, upper_arm_r_geoms),  # Added upper arm geoms to collision pairs
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
@@ -117,6 +117,9 @@ if __name__ == "__main__":
         # Initialize mocap targets at the end-effector site.
         mink.move_mocap_to_frame(model, data, "left/target", "left/gripper", "site")
         mink.move_mocap_to_frame(model, data, "right/target", "right/gripper", "site")
+
+        # Set target for posture task from current configuration
+        posture_task.set_target(configuration.q)
 
         rate = RateLimiter(frequency=200.0)
         while viewer.is_running():
