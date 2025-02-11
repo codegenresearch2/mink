@@ -27,18 +27,22 @@ class MatrixLieGroup(abc.ABC):
     def __matmul__(self, other: np.ndarray) -> np.ndarray: ...
 
     def __matmul__(self, other: Union[Self, np.ndarray]) -> Union[Self, np.ndarray]:
-        """Overload of the @ operator."""
+        """Overload of the @ operator.
+        
+        This method allows the group element to be multiplied either by another group element
+        or by a numpy array representing a point in the space.
+        """
         if isinstance(other, np.ndarray):
             return self.apply(target=other)
         assert isinstance(other, MatrixLieGroup)
         return self.multiply(other=other)
 
-    # Factory.
+    # Factory methods.
 
     @classmethod
     @abc.abstractmethod
     def identity(cls) -> Self:
-        """Returns identity element."""
+        """Returns the identity element of the group."""
         raise NotImplementedError
 
     @classmethod
@@ -69,7 +73,7 @@ class MatrixLieGroup(abc.ABC):
 
     @abc.abstractmethod
     def apply(self, target: np.ndarray) -> np.ndarray:
-        """Applies group action to a point."""
+        """Applies the group action to a point."""
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -80,45 +84,45 @@ class MatrixLieGroup(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def exp(cls, tangent: np.ndarray) -> Self:
-        """Computes `expm(wedge(tangent))`."""
+        """Computes the matrix exponential of the tangent vector."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def log(self) -> np.ndarray:
-        """Computes `vee(logm(transformation matrix))`."""
+        """Computes the logarithm of the transformation matrix."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def adjoint(self) -> np.ndarray:
-        """Computes the adjoint."""
+        """Computes the adjoint representation of the transformation."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def inverse(self) -> Self:
-        """Computes the inverse of the transform."""
+        """Computes the inverse of the transformation."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def normalize(self) -> Self:
-        """Normalize/projects values and returns."""
+        """Normalizes the transformation to ensure it remains within the group."""
         raise NotImplementedError
 
     # Plus and minus operators.
 
-    # Eqn. 25.
     def rplus(self, other: np.ndarray) -> Self:
+        """Performs a right plus operation, i.e., self * exp(other)."""
         return self @ self.exp(other)
 
-    # Eqn. 26.
     def rminus(self, other: Self) -> np.ndarray:
+        """Performs a right minus operation, i.e., log(self^-1 * other)."""
         return (other.inverse() @ self).log()
 
-    # Eqn. 27.
     def lplus(self, other: np.ndarray) -> Self:
+        """Performs a left plus operation, i.e., exp(other) * self."""
         return self.exp(other) @ self
 
-    # Eqn. 28.
     def lminus(self, other: Self) -> np.ndarray:
+        """Performs a left minus operation, i.e., log(self * other^-1)."""
         return (self @ other.inverse()).log()
 
     def plus(self, other: np.ndarray) -> Self:
@@ -139,10 +143,8 @@ class MatrixLieGroup(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def ljacinv(cls, other: np.ndarray) -> np.ndarray:
-        # NOTE: Can just be np.linalg.inv(cls.ljac(other)).
         raise NotImplementedError
 
-    # Eqn. 67.
     @classmethod
     def rjac(cls, other: np.ndarray) -> np.ndarray:
         return cls.ljac(-other)
@@ -151,6 +153,6 @@ class MatrixLieGroup(abc.ABC):
     def rjacinv(cls, other: np.ndarray) -> np.ndarray:
         return cls.ljacinv(-other)
 
-    # Eqn. 79.
     def jlog(self) -> np.ndarray:
+        """Computes the Jacobian of the logarithm map."""
         return self.rjacinv(self.log())
