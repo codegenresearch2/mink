@@ -65,6 +65,7 @@ if __name__ == "__main__":
     pos_threshold = 1e-4
     ori_threshold = 1e-4
     max_iters = 20
+    damping = 1e-3
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -87,7 +88,7 @@ if __name__ == "__main__":
             # Compute velocity and integrate into the next configuration.
             for i in range(max_iters):
                 vel = mink.solve_ik(
-                    configuration, tasks, rate.dt, solver, damping=1e-3, limits=limits
+                    configuration, tasks, rate.dt, solver, damping=damping, limits=limits
                 )
                 configuration.integrate_inplace(vel, rate.dt)
                 err = end_effector_task.compute_error(configuration)
