@@ -4,34 +4,9 @@ import itertools
 import numpy as np
 from absl.testing import absltest
 from robot_descriptions.loaders.mujoco import load_robot_description
-
-try:
-    from mink.limits import CollisionAvoidanceLimit, Contact
-    from mujoco import compute_contact_normal_jacobian
-except ImportError:
-    # Placeholder classes and functions if mink or mujoco is not available
-    class CollisionAvoidanceLimit:
-        def __init__(self, model, geom_pairs, bound_relaxation):
-            self.model = model
-            self.geom_pairs = geom_pairs
-            self.bound_relaxation = bound_relaxation
-            self.max_num_contacts = 0
-
-        def compute_qp_inequalities(self, configuration, dt):
-            # Placeholder for actual implementation
-            nv = self.model.nv
-            G = np.zeros((self.max_num_contacts, nv))
-            h = np.zeros(self.max_num_contacts)
-            return G, h
-
-    class Contact:
-        def __init__(self):
-            self.geom1 = None
-            self.geom2 = None
-
-    def compute_contact_normal_jacobian(model, data, contact):
-        # Placeholder for actual implementation
-        return np.zeros((6, model.nv))
+from mink.utils import get_body_geom_ids
+from mink.limits import CollisionAvoidanceLimit, Contact
+from mujoco import compute_contact_normal_jacobian
 
 class TestCollisionAvoidanceLimit(absltest.TestCase):
     """Test collision avoidance limit."""
