@@ -15,12 +15,15 @@ class TestVelocityLimit(absltest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.model = load_robot_description("ur5e_mj_description")
+        cls.model = load_robot_description("g1_mj_description")
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("home")  # Changed to "home"
-        self.velocities = {joint.name: np.pi for joint in self.model.joint() if joint.type != mujoco.mjtJoint.mjJNT_FREE}
+        self.configuration.update_from_keyframe("stand")
+        self.velocities = {}
+        for joint in self.model.joint():
+            if joint.name and joint.type != mujoco.mjtJoint.mjJNT_FREE:
+                self.velocities[joint.name] = np.pi
 
     def test_dimensions(self):
         limit = VelocityLimit(self.model, self.velocities)
@@ -32,7 +35,7 @@ class TestVelocityLimit(absltest.TestCase):
 
     def test_indices(self):
         limit = VelocityLimit(self.model, self.velocities)
-        expected_indices = np.array([joint.id for joint in self.model.joint() if joint.type != mujoco.mjtJoint.mjJNT_FREE])
+        expected_indices = np.arange(6, self.model.nv)  # Freejoint (0-5) is not limited.
         self.assertTrue(np.allclose(limit.indices, expected_indices))
 
     def test_model_with_no_limit(self):
