@@ -50,7 +50,10 @@ class Configuration:
         """
         self.model = model
         self.data = mujoco.MjData(model)
-        self.update(q=q)
+        if q is not None:
+            self.update(q=q)
+        else:
+            self.update()
 
     def update(self, q: Optional[np.ndarray] = None) -> None:
         """Run forward kinematics.
