@@ -32,19 +32,14 @@ class TestConfiguration(absltest.TestCase):
 
     def test_initialize_from_q(self):
         """Test that initialization from a specific configuration works."""
-        q_init = np.random.uniform(size=self.model.nq)
-        configuration = mink.Configuration(self.model, q_init)
-        np.testing.assert_array_equal(configuration.q, q_init)
+        configuration = mink.Configuration(self.model, self.q_ref)
+        np.testing.assert_array_equal(configuration.q, self.q_ref)
 
     def test_site_transform_world_frame(self):
         """Test that the site transform in the world frame is correct."""
         site_name = "attachment_site"
         configuration = mink.Configuration(self.model)
-
-        # Randomly sample a joint configuration.
-        np.random.seed(12345)
-        configuration.data.qpos = np.random.uniform(*configuration.model.jnt_range.T)
-        configuration.update()
+        configuration.update_from_keyframe("home")
 
         world_T_site = configuration.get_transform_frame_to_world(site_name, "site")
 
@@ -80,15 +75,12 @@ class TestConfiguration(absltest.TestCase):
 
         dt = 1e-3
         qvel = np.ones((self.model.nv))
-        # We can use this formula because the ur5e only has hinge joints.
         expected_qpos = self.q_ref + dt * qvel
 
-        # Regular integration should not modify the underlying q.
         qpos = configuration.integrate(qvel, dt)
         np.testing.assert_almost_equal(qpos, expected_qpos)
         np.testing.assert_equal(configuration.q, self.q_ref)
 
-        # Inplace integration should change qpos.
         configuration.integrate_inplace(qvel, dt)
         np.testing.assert_almost_equal(configuration.q, expected_qpos)
 
@@ -96,7 +88,7 @@ class TestConfiguration(absltest.TestCase):
         """Test that limits are checked correctly."""
         configuration = mink.Configuration(self.model, q=self.q_ref)
         configuration.check_limits()
-        self.q_ref[0] += 1e4  # Move configuration out of bounds.
+        self.q_ref[0] += 1e4
         configuration.update(q=self.q_ref)
         with self.assertRaises(mink.NotWithinConfigurationLimits):
             configuration.check_limits()
@@ -116,6 +108,10 @@ class TestConfiguration(absltest.TestCase):
               </body>
             </body>
           </worldbody>
+          <key name="home">
+            <joint name="floating" pos="0 0 0"/>
+            <joint name="hinge" pos="0 0 0"/>
+          </key>
         </mujoco>
         """
         model = mujoco.MjModel.from_xml_string(xml_str)
