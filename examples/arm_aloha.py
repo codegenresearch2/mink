@@ -118,6 +118,7 @@ if __name__ == "__main__":
                 )
                 configuration.integrate_inplace(vel, rate.dt)
 
+                # Correctly calculate the error for the right end-effector task.
                 l_err = l_ee_task.compute_error(configuration)
                 l_pos_achieved = np.linalg.norm(l_err[:3]) <= pos_threshold
                 l_ori_achieved = np.linalg.norm(l_err[3:]) <= ori_threshold
