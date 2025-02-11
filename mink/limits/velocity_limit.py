@@ -15,6 +15,8 @@ from .limit import Constraint, Limit
 class VelocityLimit(Limit):
     """Inequality constraint on joint velocities in a robot model.
 
+    Floating base joints are ignored.
+
     Attributes:
         indices (np.ndarray): Tangent indices corresponding to velocity-limited joints.
         limit (np.ndarray): Maximum allowed velocity magnitude for velocity-limited joints, in [m]/[s] for slide joints and [rad]/[s] for hinge joints.
@@ -64,7 +66,7 @@ class VelocityLimit(Limit):
     def compute_qp_inequalities(
         self, configuration: Configuration, dt: float
     ) -> Constraint:
-        r"""Compute the configuration-dependent joint velocity limits.
+        """Compute the configuration-dependent joint velocity limits.
 
         The limits are defined as:
 
