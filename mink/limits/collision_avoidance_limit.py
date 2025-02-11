@@ -36,7 +36,11 @@ class Contact:
         """Return True if the contact is inactive."""
         return self.dist == self.distmax and not self.fromto.any()
 
-def compute_contact_normal_jacobian(model: mujoco.MjModel, data: mujoco.MjData, contact: Contact) -> np.ndarray:
+def compute_contact_normal_jacobian(
+    model: mujoco.MjModel,
+    data: mujoco.MjData,
+    contact: Contact,
+) -> np.ndarray:
     """Computes the Jacobian mapping joint velocities to the normal component of
     the relative Cartesian linear velocity between the geom pair.
 
