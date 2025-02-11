@@ -15,9 +15,9 @@ class FrameTask(Task):
     """Regulate the pose of a robot frame in the world frame.
 
     Attributes:
-        frame_name: Name of the frame to regulate.
-        frame_type: The frame type: `body`, `geom` or `site`.
-        transform_frame_to_world: Target pose of the frame.
+        frame_name (str): Name of the frame to regulate. Typically corresponds to the name of a body, geom, or site in the robot model.
+        frame_type (str): The type of frame, can be 'body', 'geom', or 'site'.
+        transform_target_to_world (SE3): Target pose of the frame in the world frame.
     """
 
     k: int = 6
@@ -46,7 +46,10 @@ class FrameTask(Task):
         """Set the cost for the position component of the frame task.
 
         Args:
-            position_cost: A vector of shape (1,) or (3,) representing the cost for each position coordinate.
+            position_cost (npt.ArrayLike): A vector of shape (1,) or (3,) representing the cost for each position coordinate.
+
+        Raises:
+            TaskDefinitionError: If the input does not have the correct shape or contains negative values.
         """
         position_cost = np.atleast_1d(position_cost)
         if position_cost.ndim != 1 or position_cost.shape[0] not in (1, 3):
@@ -64,7 +67,10 @@ class FrameTask(Task):
         """Set the cost for the orientation component of the frame task.
 
         Args:
-            orientation_cost: A vector of shape (1,) or (3,) representing the cost for each orientation coordinate.
+            orientation_cost (npt.ArrayLike): A vector of shape (1,) or (3,) representing the cost for each orientation coordinate.
+
+        Raises:
+            TaskDefinitionError: If the input does not have the correct shape or contains negative values.
         """
         orientation_cost = np.atleast_1d(orientation_cost)
         if orientation_cost.ndim != 1 or orientation_cost.shape[0] not in (1, 3):
@@ -82,7 +88,7 @@ class FrameTask(Task):
         """Set the target pose in the world frame.
 
         Args:
-            transform_target_to_world: Transform from the task target frame to the world frame.
+            transform_target_to_world (SE3): Transform from the task target frame to the world frame.
         """
         self.transform_target_to_world = transform_target_to_world.copy()
 
@@ -90,7 +96,7 @@ class FrameTask(Task):
         """Set the target pose from a given robot configuration.
 
         Args:
-            configuration: Robot configuration :math:`q`.
+            configuration (Configuration): Robot configuration :math:`q`.
         """
         self.set_target(
             configuration.get_transform_frame_to_world(self.frame_name, self.frame_type)
@@ -110,10 +116,10 @@ class FrameTask(Task):
         where :math:`b` denotes our frame, :math:`t` the target frame and :math:`0` the inertial frame.
 
         Args:
-            configuration: Robot configuration :math:`q`.
+            configuration (Configuration): Robot configuration :math:`q`.
 
         Returns:
-            Frame task error vector :math:`e(q)`.
+            np.ndarray: Frame task error vector :math:`e(q)`.
         """
         if self.transform_target_to_world is None:
             raise TargetNotSet(self.__class__.__name__)
@@ -126,11 +132,16 @@ class FrameTask(Task):
     def compute_jacobian(self, configuration: Configuration) -> np.ndarray:
         r"""Compute the frame task Jacobian.
 
+        The task Jacobian is derived from the relationship between the task frame and the robot's configuration.
+        For a detailed derivation, refer to [1]_.
+
+        .. [1] Author, Title of the referenced work, Journal of Physics, Year.
+
         Args:
-            configuration: Robot configuration :math:`q`.
+            configuration (Configuration): Robot configuration :math:`q`.
 
         Returns:
-            Frame task jacobian :math:`J(q)`.
+            np.ndarray: Frame task jacobian :math:`J(q)`.
         """
         if self.transform_target_to_world is None:
             raise TargetNotSet(self.__class__.__name__)
