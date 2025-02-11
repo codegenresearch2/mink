@@ -10,18 +10,10 @@ import toml
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "mink"
-version: str  # Adding type hint for the version variable
-
-# Load version from pyproject.toml
-pyproject_toml = Path(__file__).resolve().parent / ".." / "pyproject.toml"
-if pyproject_toml.exists():
-    pyproject = toml.load(pyproject_toml)
-    version = pyproject["tool"]["poetry"]["version"]
-    # Ensure version is prefixed with 'v' if it is not already alphabetical
-    if not version[0].isalpha():
-        version = f"v{version}"
-else:
-    version = "0.1.0"  # Default version if pyproject.toml is not found
+version = toml.load(Path(__file__).resolve().parent / ".." / "pyproject.toml")["tool"]["poetry"]["version"]
+# Ensure version is prefixed with 'v' if it is not already alphabetical
+if not version[0].isalpha():
+    version = f"v{version}"
 
 author = "Kevin Zakka"
 copyright = f"2024, {author}"
