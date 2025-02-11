@@ -5,7 +5,6 @@ from pathlib import Path
 import mujoco
 import mujoco.viewer
 import numpy as np
-from dm_control import mjcf
 from loop_rate_limiters import RateLimiter
 
 import mink
@@ -15,7 +14,7 @@ _XML = _HERE / "kuka_iiwa_14" / "iiwa14.xml"
 
 
 def construct_model():
-    root = mjcf.RootElement()
+    root = mujoco.MjModel.from_xml_path(_XML.as_posix())
     root.statistic.meansize = 0.08
     root.statistic.extent = 1.0
     root.statistic.center = (0, 0, 0.5)
@@ -31,14 +30,14 @@ def construct_model():
         "site", name="r_attachment_site", pos=[0, -0.2, 0], group=5
     )
 
-    left_iiwa = mjcf.from_path(_XML.as_posix())
+    left_iiwa = mjoco.MjModel.from_xml_path(_XML.as_posix())
     left_iiwa.model = "l_iiwa"
     left_iiwa.find("key", "home").remove()
     left_site.attach(left_iiwa)
     for i, g in enumerate(left_iiwa.worldbody.find_all("geom")):
         g.name = f"geom_{i}"
 
-    right_iiwa = mjcf.from_path(_XML.as_posix())
+    right_iiwa = mjoco.MjModel.from_xml_path(_XML.as_posix())
     right_iiwa.model = "r_iiwa"
     right_iiwa.find("key", "home").remove()
     right_site.attach(right_iiwa)
@@ -65,11 +64,12 @@ def construct_model():
         rgba=".3 .3 .6 .5",
     )
 
-    return mujoco.MjModel.from_xml_string(root.to_xml_string(), root.get_assets())
+    return root
 
 
 if __name__ == "__main__":
     model = construct_model()
+    data = mujoco.MjData(model)
 
     configuration = mink.Configuration(model)
 
@@ -107,14 +107,10 @@ if __name__ == "__main__":
 
     left_mid = model.body("l_target").mocapid[0]
     right_mid = model.body("r_target").mocapid[0]
-    model = configuration.model
-    data = configuration.data
     solver = "osqp"
 
     l_y_des = np.array([0.392, -0.392, 0.6])
     r_y_des = np.array([0.392, 0.392, 0.6])
-    A = l_y_des.copy()
-    B = r_y_des.copy()
     l_dy_des = np.zeros(3)
     r_dy_des = np.zeros(3)
 
@@ -131,15 +127,15 @@ if __name__ == "__main__":
             model, data, "r_target", "r_iiwa/attachment_site", "site"
         )
 
-        rate = RateLimiter(frequency=60.0, warn=False)
+        rate = RateLimiter(frequency=60.0)
         t = 0.0
         while viewer.is_running():
             mu = (1 + np.cos(t)) / 2
             l_y_des[:] = (
-                A + (B - A + 0.2 * np.array([0, 0, np.sin(mu * np.pi) ** 2])) * mu
+                l_y_des + (r_y_des - l_y_des + 0.2 * np.array([0, 0, np.sin(mu * np.pi) ** 2])) * mu
             )
             r_y_des[:] = (
-                B + (A - B + 0.2 * np.array([0, 0, -np.sin(mu * np.pi) ** 2])) * mu
+                r_y_des + (l_y_des - r_y_des + 0.2 * np.array([0, 0, -np.sin(mu * np.pi) ** 2])) * mu
             )
             data.mocap_pos[left_mid] = l_y_des
             data.mocap_pos[right_mid] = r_y_des
