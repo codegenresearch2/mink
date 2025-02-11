@@ -33,9 +33,9 @@ if __name__ == "__main__":
     ]
 
     limits = [
-        mink.ConfigurationLimit(model=configuration.model),
+        mink.ConfigurationLimit(model=model),
         mink.CollisionAvoidanceLimit(
-            model=configuration.model,
+            model=model,
             geom_pairs=collision_pairs,
         ),
     ]
