@@ -8,6 +8,7 @@ import qpsolvers
 from .configuration import Configuration
 from .limits import ConfigurationLimit, Limit
 from .tasks import Objective, Task
+from .exceptions import InvalidInputError
 
 
 def _compute_qp_objective(
@@ -27,8 +28,8 @@ def _compute_qp_inequalities(
 ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
     if limits is None:
         limits = [ConfigurationLimit(configuration.model)]
-    G_list: list[np.ndarray] = []
-    h_list: list[np.ndarray] = []
+    G_list = []
+    h_list = []
     for limit in limits:
         inequality = limit.compute_qp_inequalities(configuration, dt)
         if not inequality.inactive:
@@ -60,6 +61,13 @@ def build_ik(
     Returns:
         Quadratic program of the inverse kinematics problem.
     """
+    if limits is None:
+        limits = []
+    if not isinstance(limits, list):
+        raise InvalidInputError("Limits must be a list")
+    for limit in limits:
+        if not isinstance(limit, Limit):
+            raise InvalidInputError("All limits must be instances of Limit")
     P, q = _compute_qp_objective(configuration, tasks, damping)
     G, h = _compute_qp_inequalities(configuration, limits, dt)
     return qpsolvers.Problem(P, q, G, h)
@@ -99,7 +107,10 @@ def solve_ik(
     configuration.check_limits(safety_break=safety_break)
     problem = build_ik(configuration, tasks, dt, damping, limits)
     result = qpsolvers.solve_problem(problem, solver=solver, **kwargs)
+    if result is None:
+        raise RuntimeError("QP solver returned None")
     dq = result.x
-    assert dq is not None
+    if dq is None:
+        raise RuntimeError("Solver returned None for velocity")
     v: np.ndarray = dq / dt
     return v
