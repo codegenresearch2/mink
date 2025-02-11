@@ -13,11 +13,11 @@ pyproject_path = Path(__file__).absolute().parent.parent / "pyproject.toml"
 pyproject = toml.load(pyproject_path)
 
 project = "mink"
-version: str = pyproject["project"]["version"]
+version = pyproject["project"]["version"]
 # Simplified version handling
-if not version[0].isalpha():
+if version[0].isalpha():
     version = f"v{version}"
-author: str = pyproject["project"]["authors"][0]["name"]
+author = pyproject["project"]["authors"][0]["name"]
 copyright = "2024, Kevin Zakka"
 
 # -- General configuration ---------------------------------------------------
