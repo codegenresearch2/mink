@@ -1,8 +1,3 @@
-try:
-    import dm_control
-except ImportError:
-    raise ModuleNotFoundError("The 'dm_control' library is required for this functionality. Please install it to proceed.")
-
 from pathlib import Path
 import mujoco
 import mujoco.viewer
