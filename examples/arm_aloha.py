@@ -62,22 +62,21 @@ if __name__ == "__main__":
             orientation_cost=1.0,
             lm_damping=1.0,
         ),
-        posture_task := mink.PostureTask(
-            joint_names=joint_names,
-            position_cost=1e-4,  # Adjusted cost value to match the gold code
-            velocity_cost=0.1,
-        ),
     ]
 
     # Enable collision avoidance between the following geoms:
     # geoms starting at subtree "right wrist" - "table",
     # geoms starting at subtree "left wrist"  - "table",
+    # geoms starting at subtree "right wrist" - geoms starting at subtree "left wrist".
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
+    upper_arm_l_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
+    upper_arm_r_geoms = mink.get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
     frame_geoms = mink.get_body_geom_ids(model, model.body("metal_frame").id)
     collision_pairs = [
         (l_wrist_geoms, r_wrist_geoms),
         (l_wrist_geoms + r_wrist_geoms, frame_geoms + ["table"]),
+        (upper_arm_l_geoms, upper_arm_r_geoms),  # Added upper arm geoms to collision pairs
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
@@ -90,7 +89,6 @@ if __name__ == "__main__":
         mink.ConfigurationLimit(model=model),
         mink.VelocityLimit(model, velocity_limits),
         collision_avoidance_limit,
-        posture_task,
     ]
 
     l_mid = model.body("left/target").mocapid[0]
@@ -114,8 +112,9 @@ if __name__ == "__main__":
         mink.move_mocap_to_frame(model, data, "left/target", "left/gripper", "site")
         mink.move_mocap_to_frame(model, data, "right/target", "right/gripper", "site")
 
-        # Set target for posture task from current configuration
-        posture_task.set_target_from_configuration(configuration)
+        # Initialize posture task with the model and a cost parameter
+        posture_task = mink.PostureTask(joint_names=joint_names, position_cost=1e-4, velocity_cost=0.1)
+        limits.append(posture_task)
 
         rate = RateLimiter(frequency=200.0)
         while viewer.is_running():
