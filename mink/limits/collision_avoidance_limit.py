@@ -27,16 +27,18 @@ class _Contact:
 
     @property
     def normal(self) -> np.ndarray:
+        """Return the normal vector of the contact."""
         normal = self.fromto[3:] - self.fromto[:3]
         return normal / (np.linalg.norm(normal) + 1e-9)
 
     @property
     def inactive(self) -> bool:
+        """Return True if the contact is inactive."""
         return self.dist == self.distmax and not self.fromto.any()
 
 
 def _is_welded_together(model: mujoco.MjModel, geom_id1: int, geom_id2: int) -> bool:
-    """Returns true if the geoms are part of the same body, or if their bodies are welded together."""
+    """Check if two geoms are welded together."""
     body1 = model.geom_bodyid[geom_id1]
     body2 = model.geom_bodyid[geom_id2]
     weld1 = model.body_weldid[body1]
@@ -45,7 +47,7 @@ def _is_welded_together(model: mujoco.MjModel, geom_id1: int, geom_id2: int) -> 
 
 
 def _are_geom_bodies_parent_child(model: mujoco.MjModel, geom_id1: int, geom_id2: int) -> bool:
-    """Returns true if the geom bodies have a parent-child relationship."""
+    """Check if the bodies of two geoms have a parent-child relationship."""
     body_id1 = model.geom_bodyid[geom_id1]
     body_id2 = model.geom_bodyid[geom_id2]
     body_weldid1 = model.body_weldid[body_id1]
@@ -60,34 +62,14 @@ def _are_geom_bodies_parent_child(model: mujoco.MjModel, geom_id1: int, geom_id2
 
 
 def _is_pass_contype_conaffinity_check(model: mujoco.MjModel, geom_id1: int, geom_id2: int) -> bool:
-    """Returns true if the geoms pass the contype/conaffinity check."""
+    """Check if the geoms pass the contype/conaffinity check."""
     cond1 = bool(model.geom_contype[geom_id1] & model.geom_conaffinity[geom_id2])
     cond2 = bool(model.geom_contype[geom_id2] & model.geom_conaffinity[geom_id1])
     return cond1 or cond2
 
 
 class CollisionAvoidanceLimit(Limit):
-    """Normal velocity limit between geom pairs.
-
-    Attributes:
-        model: MuJoCo model.
-        geom_pairs: Set of collision pairs in which to perform active collision avoidance.
-            A collision pair is defined as a pair of geom groups. A geom group is a set
-            of geom names. For each collision pair, the mapper will attempt to compute
-            joint velocities that avoid collisions between every geom in the first
-            geom group with every geom in the second geom group. Self collision is
-            achieved by adding a collision pair with the same geom group in both pair fields.
-        gain: Gain factor in (0, 1] that determines how fast the geoms are allowed to
-            move towards each other at each iteration. Smaller values are safer but may
-            make the geoms move slower towards each other.
-        minimum_distance_from_collisions: The minimum distance to leave between any two geoms.
-            A negative distance allows the geoms to penetrate by the specified amount.
-        collision_detection_distance: The distance between two geoms at which the active
-            collision avoidance limit will be active. A large value will cause collisions
-            to be detected early, but may incur high computational cost. A negative value
-            will cause the geoms to be detected only after they penetrate by the specified amount.
-        bound_relaxation: An offset on the upper bound of each collision avoidance constraint.
-    """
+    """Normal velocity limit between geom pairs."""
 
     def __init__(
         self,
@@ -103,20 +85,20 @@ class CollisionAvoidanceLimit(Limit):
         Args:
             model: MuJoCo model.
             geom_pairs: Set of collision pairs in which to perform active collision avoidance.
-                A collision pair is defined as a pair of geom groups. A geom group is a set
-                of geom names. For each collision pair, the mapper will attempt to compute
-                joint velocities that avoid collisions between every geom in the first
-                geom group with every geom in the second geom group. Self collision is
-                achieved by adding a collision pair with the same geom group in both pair fields.
-            gain: Gain factor in (0, 1] that determines how fast the geoms are allowed to
-                move towards each other at each iteration. Smaller values are safer but may
-                make the geoms move slower towards each other.
+                A collision pair is defined as a pair of geom groups. A geom group is a set of geom names.
+                For each collision pair, the mapper will attempt to compute joint velocities that avoid
+                collisions between every geom in the first geom group with every geom in the second
+                geom group. Self collision is achieved by adding a collision pair with the same geom
+                group in both pair fields.
+            gain: Gain factor in (0, 1] that determines how fast the geoms are allowed to move towards
+                each other at each iteration. Smaller values are safer but may make the geoms move slower
+                towards each other.
             minimum_distance_from_collisions: The minimum distance to leave between any two geoms.
                 A negative distance allows the geoms to penetrate by the specified amount.
-            collision_detection_distance: The distance between two geoms at which the active
-                collision avoidance limit will be active. A large value will cause collisions
-                to be detected early, but may incur high computational cost. A negative value
-                will cause the geoms to be detected only after they penetrate by the specified amount.
+            collision_detection_distance: The distance between two geoms at which the active collision
+                avoidance limit will be active. A large value will cause collisions to be detected early,
+                but may incur high computational cost. A negative value will cause the geoms to be detected
+                only after they penetrate by the specified amount.
             bound_relaxation: An offset on the upper bound of each collision avoidance constraint.
         """
         self.model = model
@@ -132,6 +114,26 @@ class CollisionAvoidanceLimit(Limit):
         configuration: Configuration,
         dt: float,
     ) -> Constraint:
+        """Compute the configuration-dependent joint position limits.
+
+        The limits are defined as:
+
+        .. math::
+
+            {q \ominus q_{min}} \leq \Delta q \leq {q_{max} \ominus q}
+
+        where :math:`q \in {\cal C}` is the robot's configuration and
+        :math:`\Delta q \in T_q({\cal C})` is the displacement in the tangent
+        space at :math:`q`. See the :ref:`derivations` section for more information.
+
+        Args:
+            configuration: Robot configuration :math:`q`.
+            dt: Integration timestep in [s].
+
+        Returns:
+            Pair :math:`(G, h)` representing the inequality constraint as
+            :math:`G \Delta q \leq h`, or ``None`` if there is no limit.
+        """
         upper_bound = np.full((self.max_num_contacts,), np.inf)
         coefficient_matrix = np.zeros((self.max_num_contacts, self.model.nv))
         for idx, (geom1_id, geom2_id) in enumerate(self.geom_id_pairs):
@@ -149,8 +151,6 @@ class CollisionAvoidanceLimit(Limit):
             jac = self._compute_contact_normal_jacobian(configuration.data, contact)
             coefficient_matrix[idx] = -jac
         return Constraint(G=coefficient_matrix, h=upper_bound)
-
-    # Private methods.
 
     def _compute_contact_with_minimum_distance(
         self, data: mujoco.MjData, geom1_id: int, geom2_id: int
