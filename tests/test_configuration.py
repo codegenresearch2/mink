@@ -41,6 +41,11 @@ class TestConfiguration(absltest.TestCase):
         configuration = mink.Configuration(self.model)
         configuration.update_from_keyframe("home")
 
+        # Randomly sample a joint configuration.
+        np.random.seed(12345)
+        configuration.data.qpos = np.random.uniform(*configuration.model.jnt_range.T)
+        configuration.update()
+
         world_T_site = configuration.get_transform_frame_to_world(site_name, "site")
 
         expected_translation = configuration.data.site(site_name).xpos
@@ -108,10 +113,6 @@ class TestConfiguration(absltest.TestCase):
               </body>
             </body>
           </worldbody>
-          <key name="home">
-            <joint name="floating" pos="0 0 0"/>
-            <joint name="hinge" pos="0 0 0"/>
-          </key>
         </mujoco>
         """
         model = mujoco.MjModel.from_xml_string(xml_str)
