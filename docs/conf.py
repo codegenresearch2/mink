@@ -28,9 +28,20 @@ source_suffix = {".rst": "restructuredtext"}
 
 pygments_style = "sphinx"
 
-# Disable unnecessary Napoleon settings
-napoleon_numpy_docstring = False
-napoleon_use_rtype = False
+# Autodoc options
+autodoc_typehints = "description"
+autodoc_class_signature = "separated"
+autodoc_default_options = {
+    'members': True,
+    'member-order': 'bysource',
+    'special-members': '__init__',
+    'undoc-members': True,
+}
+
+# Napoleon settings
+napoleon_numpy_docstring = True
+napoleon_use_rtype = True
+napoleon_use_param = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
