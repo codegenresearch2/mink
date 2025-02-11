@@ -40,7 +40,7 @@ class ComTask(Task):
             cost (npt.ArrayLike): The new cost for the CoM coordinates.
         """
         cost = np.atleast_1d(cost)
-        if cost.ndim != 1 or cost.shape[0] not in (1, self.k):
+        if cost.ndim != 1 or (cost.shape[0] not in (1, self.k) and self.k != 3):
             raise TaskDefinitionError(
                 f"{self.__class__.__name__} cost must be a vector of shape (1,) or ({self.k},). "
                 f"Got {cost.shape}"
