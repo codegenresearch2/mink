@@ -3,6 +3,7 @@
 import abc
 from typing import NamedTuple, Optional
 
+import mujoco
 import numpy as np
 
 from ..configuration import Configuration
@@ -15,7 +16,9 @@ class Constraint(NamedTuple):
     """
 
     G: Optional[np.ndarray] = None
+    """Shape (nv, nv)."""
     h: Optional[np.ndarray] = None
+    """Shape (nv,)."""
 
     @property
     def inactive(self) -> bool:
