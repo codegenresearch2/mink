@@ -20,14 +20,14 @@ class TestVelocityLimit(absltest.TestCase):
     def setUp(self):
         self.configuration = Configuration(self.model)
         self.configuration.update_from_keyframe("stand")
-        # NOTE(kevin): These velocities are arbitrary and do not match real hardware.
+        # Using np.pi for velocity values to match the gold code.
         self.velocities = {
-            self.model.joint(i).name: 3.14 for i in range(1, self.model.njnt)
+            self.model.joint(i).name: np.pi for i in range(1, self.model.njnt)
         }
 
     def test_throws_error_if_joint_limit_invalid(self):
         with self.assertRaises(LimitDefinitionError):
-            VelocityLimit(self.model, {"invalid_joint": np.array([1, 2, 3])})
+            VelocityLimit(self.model, {"invalid_joint": np.pi})
 
     def test_dimensions(self):
         limit = VelocityLimit(self.model, self.velocities)
@@ -51,19 +51,15 @@ class TestVelocityLimit(absltest.TestCase):
         self.assertIsNone(h)
 
     def test_model_with_subset_of_velocities_limited(self):
-        partial_velocities = {}
-        for i, (key, value) in enumerate(self.velocities.items()):
-            if i > 2:
-                break
-            partial_velocities[key] = value
-        limit = VelocityLimit(self.model, partial_velocities)
+        limit_subset = {key: value for i, (key, value) in enumerate(self.velocities.items()) if i < 3}
+        limit = VelocityLimit(self.model, limit_subset)
         nb = 3
         nv = self.model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
         expected_limit = np.asarray(
             [
-                3.14,
+                np.pi,
             ]
             * nb
         )
