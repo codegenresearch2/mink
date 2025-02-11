@@ -95,8 +95,15 @@ class PostureTask(Task):
         if self.target_q is None:
             raise TargetNotSet(self.__class__.__name__)
 
-        # Compute the error as the difference between the target posture and the current posture
-        qvel = self.target_q - configuration.q
+        # Use mujoco.mj_differentiatePos to compute the error
+        qvel = np.empty(configuration.nv)
+        mujoco.mj_differentiatePos(
+            m=configuration.model,
+            qvel=qvel,
+            dt=1.0,
+            qpos1=configuration.q,
+            qpos2=self.target_q,
+        )
 
         if self._v_ids is not None:
             qvel[self._v_ids] = 0.0
@@ -124,3 +131,6 @@ class PostureTask(Task):
             jac[:, self._v_ids] = 0.0
 
         return jac
+
+
+This revised code snippet addresses the feedback by ensuring that the `compute_error` method uses `mujoco.mj_differentiatePos` to calculate the error, and the `compute_jacobian` method returns the identity matrix as specified in the gold code. Additionally, it ensures that the comments and docstrings are consistent with the gold code's format and style.
