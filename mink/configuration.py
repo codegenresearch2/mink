@@ -74,6 +74,9 @@ class Configuration:
 
         Args:
             key_name: The name of the keyframe.
+
+        Raises:
+            exceptions.InvalidKeyframe: If no keyframe is found with the given name.
         """
         key_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_KEY, key_name)
         if key_id == -1:
@@ -89,20 +92,23 @@ class Configuration:
                 configuration is outside limits. If False, print a warning and continue
                 execution.
         """
-        for jnt in range(self.model.njnt):
-            if self.model.jnt_limited[jnt] and (self.q[self.model.jnt_qposadr[jnt]] < self.model.jnt_range[jnt, 0] + tol or self.q[self.model.jnt_qposadr[jnt]] > self.model.jnt_range[jnt, 1] - tol):
+        for joint_index in range(self.model.njnt):
+            if self.model.jnt_limited[joint_index] and (
+                self.q[self.model.jnt_qposadr[joint_index]] < self.model.jnt_range[joint_index, 0] + tol
+                or self.q[self.model.jnt_qposadr[joint_index]] > self.model.jnt_range[joint_index, 1] - tol
+            ):
                 if safety_break:
                     raise exceptions.NotWithinConfigurationLimits(
-                        joint_id=jnt,
-                        value=self.q[self.model.jnt_qposadr[jnt]],
-                        lower=self.model.jnt_range[jnt, 0],
-                        upper=self.model.jnt_range[jnt, 1],
+                        joint_id=joint_index,
+                        value=self.q[self.model.jnt_qposadr[joint_index]],
+                        lower=self.model.jnt_range[joint_index, 0],
+                        upper=self.model.jnt_range[joint_index, 1],
                         model=self.model,
                     )
                 else:
                     print(
-                        f"Value {self.q[self.model.jnt_qposadr[jnt]]:.2f} at index {jnt} is outside of its limits: "
-                        f"[{self.model.jnt_range[jnt, 0]:.2f}, {self.model.jnt_range[jnt, 1]:.2f}]"
+                        f"Value {self.q[self.model.jnt_qposadr[joint_index]]:.2f} at index {joint_index} is outside of its limits: "
+                        f"[{self.model.jnt_range[joint_index, 0]:.2f}, {self.model.jnt_range[joint_index, 1]:.2f}]"
                     )
 
     def get_frame_jacobian(self, frame_name: str, frame_type: str) -> np.ndarray:
