@@ -41,7 +41,7 @@ autodoc_default_options = {
     'special-members': '__init__',
     'undoc-members': True,
     'inherited-members': False,
-    'exclude-members': '__weakref__',
+    'exclude-members': '__weakref__,__dict__',  # Updated to match gold code
 }
 
 # Autodoc type aliases
