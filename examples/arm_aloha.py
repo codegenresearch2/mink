@@ -21,12 +21,17 @@ _JOINT_NAMES = [
 ]
 
 # Single arm velocity limits, taken from:
-# https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
+# https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_ros_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
 
-if __name__ == "__main__":
+def construct_model():
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
+    return model
+
+
+if __name__ == "__main__":
+    model = construct_model()
     data = mujoco.MjData(model)
 
     # Get the dof and actuator ids for the joints we wish to control.
@@ -57,7 +62,6 @@ if __name__ == "__main__":
             orientation_cost=1.0,
             lm_damping=1.0,
         ),
-        posture_task := mink.PostureTask(model, cost=1e-4),
     ]
 
     # Enable collision avoidance between the following geoms:
@@ -66,12 +70,10 @@ if __name__ == "__main__":
     # geoms starting at subtree "right wrist" - geoms starting at subtree "left wrist".
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
-    l_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
-    r_geoms = mink.get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
     frame_geoms = mink.get_body_geom_ids(model, model.body("metal_frame").id)
     collision_pairs = [
         (l_wrist_geoms, r_wrist_geoms),
-        (l_geoms + r_geoms, frame_geoms + ["table"]),
+        (l_wrist_geoms + r_wrist_geoms, frame_geoms + ["table"]),
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
@@ -89,9 +91,9 @@ if __name__ == "__main__":
     l_mid = model.body("left/target").mocapid[0]
     r_mid = model.body("right/target").mocapid[0]
     solver = "quadprog"
-    pos_threshold = 1e-2
-    ori_threshold = 1e-2
-    max_iters = 2
+    pos_threshold = 1e-4
+    ori_threshold = 1e-4
+    max_iters = 20
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -102,7 +104,6 @@ if __name__ == "__main__":
         mujoco.mj_resetDataKeyframe(model, data, model.key("neutral_pose").id)
         configuration.update(data.qpos)
         mujoco.mj_forward(model, data)
-        posture_task.set_target_from_configuration(configuration)
 
         # Initialize mocap targets at the end-effector site.
         mink.move_mocap_to_frame(model, data, "left/target", "left/gripper", "site")
@@ -122,14 +123,14 @@ if __name__ == "__main__":
                     rate.dt,
                     solver,
                     limits=limits,
-                    damping=1e-5,
+                    damping=1e-3,
                 )
                 configuration.integrate_inplace(vel, rate.dt)
 
                 l_err = l_ee_task.compute_error(configuration)
                 l_pos_achieved = np.linalg.norm(l_err[:3]) <= pos_threshold
                 l_ori_achieved = np.linalg.norm(l_err[3:]) <= ori_threshold
-                r_err = l_ee_task.compute_error(configuration)
+                r_err = r_ee_task.compute_error(configuration)
                 r_pos_achieved = np.linalg.norm(r_err[:3]) <= pos_threshold
                 r_ori_achieved = np.linalg.norm(r_err[3:]) <= ori_threshold
                 if (
