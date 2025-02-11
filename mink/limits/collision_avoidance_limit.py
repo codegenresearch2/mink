@@ -41,21 +41,17 @@ class Contact:
     @property
     def normal(self) -> np.ndarray:
         """The normal vector of the contact, pointing from geom1 to geom2."""
-        if self.fromto.size == 0:
-            raise ValueError("fromto array is empty")
         normal = self.fromto[3:] - self.fromto[:3]
-        if normal.size != 3:
-            raise ValueError("normal vector must have exactly 3 elements")
-        return normal / np.linalg.norm(normal)
+        return mujoco.mju_normalize3(normal)
 
     @property
     def inactive(self) -> bool:
         """Whether the contact is inactive based on the distance.
 
         Returns:
-            bool: True if the distance is equal to distmax and fromto is not empty, False otherwise.
+            bool: True if the distance is equal to distmax, False otherwise.
         """
-        return self.dist == self.distmax and self.fromto.size != 0
+        return self.dist == self.distmax
 
 
 def compute_contact_normal_jacobian(
