@@ -24,14 +24,24 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model, data, subtree_ids, qfrc_applied=None):
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int], qfrc_applied: np.ndarray = None) -> None:
+    """
+    Compensate for gravity by applying forces to counteract gravity for specified subtree IDs.
+
+    Args:
+        model (mujoco.MjModel): The MuJoCo model object.
+        data (mujoco.MjData): The MuJoCo data object.
+        subtree_ids (list[int]): List of subtree IDs to apply gravity compensation to.
+        qfrc_applied (np.ndarray, optional): Array to store the computed forces. If not provided, a new array is created.
+    """
     if qfrc_applied is None:
         qfrc_applied = np.zeros_like(data.qfrc_applied)
     
     for subtree_id in subtree_ids:
         body_ids = mujoco.mj_get_body_parentid(model, subtree_id, True)
         for body_id in body_ids:
-            qfrc_applied[body_id] = -np.array(model.body(model.name2id(body_id)).mass) * model.opt.gravity
+            body = model.body(model.name2id(body_id))
+            qfrc_applied[body.jntadr[0]:body.jntadr[1]] = -np.array(body.mass) * model.opt.gravity
     
     data.qfrc_applied[:] = qfrc_applied
 
