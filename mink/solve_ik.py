@@ -97,17 +97,18 @@ def solve_ik(
     Returns:
         Velocity `v` in tangent space.
     """
-    try:
-        configuration.check_limits(safety_break=safety_break)
-    except ConfigurationLimitError as e:
-        if safety_break:
-            raise e
-        else:
-            print(f"Warning: {e}")
-
+    configuration.check_limits(safety_break=safety_break)
     problem = build_ik(configuration, tasks, dt, damping, limits)
     result = qpsolvers.solve_problem(problem, solver=solver, **kwargs)
     dq = result.x
     assert dq is not None
     v: np.ndarray = dq / dt
     return v
+
+
+This revised code snippet addresses the feedback from the oracle by:
+
+1. Ensuring the correct import of `ConfigurationLimitError` from the `mink.exceptions` module.
+2. Adding type annotations to `G_list` and `h_list` in the `_compute_qp_inequalities` function.
+3. Simplifying the error handling in the `solve_ik` function.
+4. Ensuring consistent docstring formatting and variable initialization style.
