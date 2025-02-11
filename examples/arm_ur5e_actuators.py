@@ -56,7 +56,10 @@ if __name__ == "__main__":
     velocity_limit = mink.VelocityLimit(model, max_velocities)
     limits.append(velocity_limit)
 
-    # IK settings.
+    ## ===================
+    ## IK Settings.
+    ## ===================
+
     pos_threshold = 1e-4
     ori_threshold = 1e-4
     max_iters = 20
