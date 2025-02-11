@@ -1,12 +1,9 @@
 """Configuration space of a robot model.
 
-The :class:`Configuration` class bundles a MuJoCo `model <https://mujoco.readthedocs.io/en/latest/APIreference/APItypes.html#mjmodel>`__
-and `data <https://mujoco.readthedocs.io/en/latest/APIreference/APItypes.html#mjdata>`__,
-and enables easy access to kinematic quantities such as frame transforms and frame
-Jacobians.
-
-Frames are coordinate systems that can be attached to different elements of
-the robot model. mink supports frames of type `body`, `geom` and `site`.
+The :class:`Configuration` class bundles a MuJoCo model and its associated data,
+enabling easy access to kinematic quantities such as frame transforms and Jacobians. It
+automatically performs forward kinematics at each time step, ensuring that all
+kinematic queries return up-to-date information.
 """
 
 from typing import Optional
@@ -54,7 +51,10 @@ class Configuration:
         """
         self.model = model
         self.data = mujoco.MjData(model)
-        self.update(q=q)
+        if q is not None:
+            self.data.qpos = q
+        else:
+            self.data.qpos = self.model.qpos0
 
     def update(self, q: Optional[np.ndarray] = None) -> None:
         """Run forward kinematics.
@@ -100,7 +100,7 @@ class Configuration:
             ):
                 continue
             padr = self.model.jnt_qposadr[jnt]
-            qval = self.q[padr]
+            qval = self.data.qpos[padr]
             qmin = self.model.jnt_range[jnt, 0]
             qmax = self.model.jnt_range[jnt, 1]
             if qval < qmin - tol or qval > qmax + tol:
