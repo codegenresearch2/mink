@@ -34,13 +34,19 @@ napoleon_use_rtype = False
 napoleon_use_param = True
 
 # Autodoc settings
-autodoc_typehints = "description"
+autodoc_typehints = "both"
 autodoc_class_signature = "separated"
 autodoc_default_options = {
     'members': True,
     'member-order': 'bysource',
-    'special-members': '__init__',
+    'special-members': '__init__, __post_init__, __new__',
     'undoc-members': True,
+    'inherited-members': False,
+}
+
+# Autodoc type aliases
+autodoc_type_aliases = {
+    "npt.ArrayLike": "ArrayLike",
 }
 
 # -- Options for HTML output -------------------------------------------------
