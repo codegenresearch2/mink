@@ -19,22 +19,22 @@ class TestVelocityLimit(absltest.TestCase):
 
     def setUp(self):
         self.configuration = Configuration(self.model)
-        self.configuration.update_from_keyframe("home")
-        self.velocities = {}
-        for i in range(self.model.njnt):
-            joint_type = self.model.jnt_type[i]
-            if joint_type != mujoco.mjtJoint.mjJNT_FREE:
-                self.velocities[self.model.joint(i).name] = np.pi
+        self.configuration.update_from_keyframe("stand")
+        self.velocities = {
+            joint.name: np.pi for joint in self.model.joint() if joint.type != mujoco.mjtJoint.mjJNT_FREE
+        }
 
     def test_dimensions(self):
         limit = VelocityLimit(self.model, self.velocities)
         nv = self.configuration.nv
-        self.assertEqual(limit.projection_matrix.shape, (len(self.velocities), nv))
-        self.assertEqual(len(limit.indices), len(self.velocities))
+        free_joint_dims = get_freejoint_dims(self.model)[1]
+        nb = nv - len(free_joint_dims)
+        self.assertEqual(len(limit.indices), nb)
+        self.assertEqual(limit.projection_matrix.shape, (nb, nv))
 
     def test_indices(self):
         limit = VelocityLimit(self.model, self.velocities)
-        expected_indices = np.array([self.model.joint(name).id for name in self.velocities])
+        expected_indices = np.array([joint.id for joint in self.model.joint() if joint.type != mujoco.mjtJoint.mjJNT_FREE])
         self.assertTrue(np.allclose(limit.indices, expected_indices))
 
     def test_model_with_no_limit(self):
@@ -48,9 +48,7 @@ class TestVelocityLimit(absltest.TestCase):
 
     def test_model_with_subset_of_velocities_limited(self):
         velocities = {
-            "wrist_1_joint": np.pi,
-            "wrist_2_joint": np.pi,
-            "wrist_3_joint": np.pi,
+            joint.name: np.pi for joint in self.model.joint() if joint.type == mujoco.mjtJoint.mjJNT_HINGE and joint.limited
         }
         limit = VelocityLimit(self.model, velocities)
         nb = len(velocities)
