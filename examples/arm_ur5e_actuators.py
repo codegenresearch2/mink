@@ -15,10 +15,7 @@ if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
     data = mujoco.MjData(model)
 
-    ## =================== ##
-    ## Setup IK.
-    ## =================== ##
-
+    # Setup IK.
     configuration = mink.Configuration(model)
 
     tasks = [
@@ -55,10 +52,6 @@ if __name__ == "__main__":
     }
     velocity_limit = mink.VelocityLimit(model, max_velocities)
     limits.append(velocity_limit)
-
-    ## =================== ##
-
-    mid = model.body("target").mocapid[0]
 
     # IK settings.
     solver = "quadprog"
