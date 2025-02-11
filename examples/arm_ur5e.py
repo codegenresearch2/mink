@@ -54,7 +54,7 @@ if __name__ == "__main__":
     # Get the mocap ID for the "target" body
     mid = model.body("target").mocapid[0]
 
-    # Assign model and data from configuration
+    # Assign model and data from configuration immediately after creating it
     model = configuration.model
     data = configuration.data
     solver = "quadprog"
