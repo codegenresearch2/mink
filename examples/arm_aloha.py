@@ -24,27 +24,30 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, dof_ids: np.ndarray, actuator_ids: np.ndarray) -> None:
-    """Compensate for gravity using the Jacobian transpose method."""
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int]) -> None:
+    """
+    Compensate for gravity using the Jacobian transpose method for a given list of subtree IDs.
+    
+    Args:
+        model (mujoco.MjModel): The Mujoco model object.
+        data (mujoco.MjData): The Mujoco data object.
+        subtree_ids (list[int]): List of subtree IDs to apply gravity compensation to.
+    """
     mujoco.mj_forward(model, data)
     gravity_compensation = np.zeros_like(data.qacc)
-    for i in range(model.nv):
-        gravity_compensation += np.dot(model.jacc[i], data.qvel[i]) * model.gravity[i]
-    data.qfrc_applied[dof_ids] = np.dot(model.jacc.T, gravity_compensation)[dof_ids]
-
-def get_subtree_geom_ids(model: mujoco.MjModel, body_id: int) -> list[int]:
-    subtree_body_ids = []
-    queue = [body_id]
-    while queue:
-        current_body_id = queue.pop(0)
-        subtree_body_ids.append(current_body_id)
-        for child_body_id in model.body_children(current_body_id):
-            queue.append(child_body_id)
-    return [model.geom(geom_id).id for geom_id in model.body_geom(subtree_body_ids[0])]
+    for body_id in subtree_ids:
+        for i in range(model.nv):
+            gravity_compensation += np.dot(model.jacc[i, body_id], data.qvel[i]) * model.gravity[i]
+    for body_id in subtree_ids:
+        data.qfrc_applied[mujoco.mj_dof_subtree_id(model, body_id)] = gravity_compensation[mujoco.mj_dof_subtree_id(model, body_id)]
 
 if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
     data = mujoco.MjData(model)
+
+    # Get the subtree IDs for the left and right arms.
+    left_subtree_ids = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
+    right_subtree_ids = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
 
     # Get the dof and actuator ids for the joints we wish to control.
     joint_names: list[str] = []
@@ -81,13 +84,12 @@ if __name__ == "__main__":
     # geoms starting at subtree "right wrist" - "table",
     # geoms starting at subtree "left wrist"  - "table",
     # geoms starting at subtree "right wrist" - geoms starting at subtree "left wrist".
-    l_wrist_geoms = get_subtree_geom_ids(model, model.body("left/wrist_link").id)
-    r_wrist_geoms = get_subtree_geom_ids(model, model.body("right/wrist_link").id)
-    l_geoms = get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
-    r_geoms = get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
-    frame_geoms = get_subtree_geom_ids(model, model.body("metal_frame").id)
+    l_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
+    r_geoms = mink.get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
+    frame_geoms = mink.get_subtree_geom_ids(model, model.body("metal_frame").id)
     collision_pairs = [
-        (l_wrist_geoms, r_wrist_geoms),
+        (l_geoms, ["table"]),
+        (r_geoms, ["table"]),
         (l_geoms + r_geoms, frame_geoms + ["table"]),
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
@@ -158,7 +160,7 @@ if __name__ == "__main__":
                     break
 
             data.ctrl[actuator_ids] = configuration.q[dof_ids]
-            compensate_gravity(model, data, dof_ids, actuator_ids)
+            compensate_gravity(model, data, left_subtree_ids + right_subtree_ids)
             mujoco.mj_step(model, data)
 
             # Visualize at fixed FPS.
