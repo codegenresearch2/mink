@@ -6,7 +6,7 @@ import mujoco
 import numpy as np
 
 from ..configuration import Configuration
-from ..constants import qpos_width
+from ..constants import dof_width
 from .exceptions import LimitDefinitionError
 from .limit import Constraint, Limit
 
@@ -45,18 +45,22 @@ class ConfigurationLimit(Limit):
         upper = np.full(model.nq, mujoco.mjMAXVAL)
         for jnt in range(model.njnt):
             jnt_type = model.jnt_type[jnt]
-            qpos_dim = qpos_width(jnt_type)
+            jnt_dim = dof_width(jnt_type)
             jnt_range = model.jnt_range[jnt]
             padr = model.jnt_qposadr[jnt]
             if jnt_type == mujoco.mjtJoint.mjJNT_FREE or not model.jnt_limited[jnt]:
                 continue  # Skip free joints and joints without limits.
 
-            lower[padr : padr + qpos_dim] = jnt_range[0] + min_distance_from_limits
-            upper[padr : padr + qpos_dim] = jnt_range[1] - min_distance_from_limits
-            index_list.extend(range(padr, padr + qpos_dim))
+            lower[padr : padr + jnt_dim] = jnt_range[0] + min_distance_from_limits
+            upper[padr : padr + jnt_dim] = jnt_range[1] - min_distance_from_limits
+            index_list.extend(range(padr, padr + jnt_dim))
 
         self.indices = np.array(index_list)
         self.indices.setflags(write=False)
+
+        # Ensure indices are within valid bounds for projection_matrix
+        if self.indices.max() >= model.nv:
+            raise IndexError("Index exceeds the size of the array.")
 
         dim = len(self.indices)
         self.projection_matrix = np.eye(model.nv)[self.indices] if dim > 0 else None
@@ -97,6 +101,7 @@ class ConfigurationLimit(Limit):
         if self.projection_matrix is None:
             return Constraint()
 
+        # Upper limit
         delta_q_max = np.zeros(self.model.nv)
         mujoco.mj_differentiatePos(
             m=self.model,
@@ -106,6 +111,7 @@ class ConfigurationLimit(Limit):
             qpos2=self.upper,
         )
 
+        # Lower limit
         delta_q_min = np.zeros(self.model.nv)
         mujoco.mj_differentiatePos(
             m=self.model,
