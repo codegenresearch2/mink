@@ -115,7 +115,6 @@ if __name__ == "__main__":
         )
 
         rate = RateLimiter(frequency=100.0)
-        rate.add_warning_option()  # Adding the warning option as per user preference
         while viewer.is_running():
             # Update kuka end-effector task.
             T_wt = mink.SE3.from_mocap_name(model, data, "target")
