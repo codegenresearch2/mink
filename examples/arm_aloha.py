@@ -37,8 +37,12 @@ def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: 
         qfrc_applied = np.zeros_like(data.qacc)
 
     mujoco.mj_forward(model, data)
+    total_mass = sum(model.body(body_id).mass for body_id in subtree_ids)
+    
     for body_id in subtree_ids:
-        mujoco.mj_jacSubtreeCom(model, data, qfrc_applied, body_id)
+        jacp = np.zeros(model.nv)
+        mujoco.mj_jacp(model, data, jacp, body_id)
+        qfrc_applied += -total_mass * model.opt.gravity @ jacp
 
     for body_id in subtree_ids:
         data.qfrc_applied[mujoco.mj_dof_subtree_id(model, body_id)] = qfrc_applied[mujoco.mj_dof_subtree_id(model, body_id)]
