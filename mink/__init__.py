@@ -33,17 +33,30 @@ class InvalidMujocoModel(Exception):
     """Raised when a Mujoco model is invalid."""
     pass
 
-# Function to construct the model
+# Helper functions
+def load_xml_file(file_path):
+    """Loads an XML file and returns its content."""
+    try:
+        with open(file_path, 'r') as file:
+            return file.read()
+    except FileNotFoundError:
+        raise InvalidXMLFile(f"The XML file at {file_path} was not found.")
+    except Exception as e:
+        raise InvalidXMLFile(f"An error occurred while reading the XML file: {e}")
+
 def construct_model():
     """Constructs the MuJoCo model for the robotic arm and hand."""
     try:
-        arm_mjcf = mjcf.from_path(_ARM_XML.as_posix())
-        if not arm_mjcf:
-            raise InvalidXMLFile("The arm XML file is invalid.")
+        arm_xml_content = load_xml_file(_ARM_XML)
+        hand_xml_content = load_xml_file(_HAND_XML)
         
-        hand_mjcf = mjcf.from_path(_HAND_XML.as_posix())
+        arm_mjcf = mjcf.from_xml_string(arm_xml_content)
+        hand_mjcf = mjcf.from_xml_string(hand_xml_content)
+        
+        if not arm_mjcf:
+            raise InvalidMujocoModel("The arm MJCF model is invalid.")
         if not hand_mjcf:
-            raise InvalidXMLFile("The hand XML file is invalid.")
+            raise InvalidMujocoModel("The hand MJCF model is invalid.")
         
         arm_mjcf.find("key", "home").remove()
         
@@ -76,9 +89,14 @@ def construct_model():
         
         return mj_model
     
+    except InvalidXMLFile as e:
+        print(f"XML File Error: {e}")
+    except InvalidMujocoModel as e:
+        print(f"Mujoco Model Error: {e}")
     except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
+        print(f"An unexpected error occurred: {e}")
+    
+    return None
 
 # Main execution block
 if __name__ == "__main__":
