@@ -10,6 +10,7 @@ import toml
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "mink"
+version: str  # Adding type hint for the version variable
 
 # Load version from pyproject.toml
 pyproject_toml = Path(__file__).resolve().parent / ".." / "pyproject.toml"
