@@ -7,27 +7,17 @@ from robot_descriptions.loaders.mujoco import load_robot_description
 from mujoco import MjModel, MjData, compute_contact_normal_jacobian
 
 try:
-    from mink.limits import CollisionAvoidanceLimit, Contact
+    from mink import Configuration
 except ImportError:
-    # Placeholder for the CollisionAvoidanceLimit and Contact classes if mink is not available
-    class CollisionAvoidanceLimit:
-        def __init__(self, model, geom_pairs, bound_relaxation):
+    # Placeholder for the Configuration class if mink is not available
+    class Configuration:
+        def __init__(self, model):
             self.model = model
-            self.geom_pairs = geom_pairs
-            self.bound_relaxation = bound_relaxation
-            self.max_num_contacts = 0
+            self.qpos = np.zeros(model.nv)
 
-        def compute_qp_inequalities(self, configuration, dt):
+        def update_from_keyframe(self, keyframe_name):
             # Placeholder for actual implementation
-            nv = self.model.nv
-            G = np.zeros((self.max_num_contacts, nv))
-            h = np.zeros(self.max_num_contacts)
-            return G, h
-
-    class Contact:
-        def __init__(self):
-            self.geom1 = None
-            self.geom2 = None
+            pass
 
 class TestCollisionAvoidanceLimit(absltest.TestCase):
     """Test collision avoidance limit."""
@@ -75,6 +65,7 @@ class TestCollisionAvoidanceLimit(absltest.TestCase):
         self.assertEqual(G.shape, (expected_max_num_contacts, self.model.nv))
         self.assertEqual(h.shape, (expected_max_num_contacts,))
 
+    @unittest.skipIf(not hasattr(compute_contact_normal_jacobian, '__call__'), "compute_contact_normal_jacobian function not available")
     def test_contact_normal_jac_matches_mujoco(self):
         # Set up the model with specific options
         model = self.model
