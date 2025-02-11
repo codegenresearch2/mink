@@ -25,7 +25,8 @@ class Objective(NamedTuple):
 class Task(abc.ABC):
     """Abstract base class for kinematic tasks.
 
-    Subclasses must implement the `compute_error` and `compute_jacobian` methods.
+    This class defines the interface for all kinematic tasks. Subclasses must implement
+    the `compute_error` and `compute_jacobian` methods to define the specific task.
     """
 
     def __init__(
