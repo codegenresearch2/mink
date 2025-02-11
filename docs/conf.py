@@ -9,49 +9,49 @@ import toml
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "mink"
-version: str = toml.load(Path(__file__).resolve().parent / ".." / "pyproject.toml")["tool"]["poetry"]["version"]
+project = 'mink'
+version = toml.load(Path(__file__).resolve().parent / '..' / 'pyproject.toml')['tool']['poetry']['version']
 # Ensure version is prefixed with 'v' if it is not already alphabetical
 if not version[0].isalpha():
-    version = f"v{version}"
+    version = f'v{version}'
 
-author = "Kevin Zakka"
-copyright = f"2024, {author}"
+author = 'Kevin Zakka'
+copyright = f'2024, {author}'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.coverage",
-    "sphinx-mathjax-offline",
-    "sphinx.ext.napoleon",
-    "sphinx_favicon",
+    'sphinx.ext.autodoc',
+    'sphinx.ext.coverage',
+    'sphinx-mathjax-offline',
+    'sphinx.ext.napoleon',
+    'sphinx_favicon',
 ]
 
-autodoc_typehints = "both"
-autodoc_class_signature = "separated"
+autodoc_typehints = 'both'
+autodoc_class_signature = 'separated'
 autodoc_default_options = {
-    "members": True,
-    "member-order": "bysource",
-    "inherited-members": False,
-    "exclude-members": "__init__, __post_init__, __new__",
+    'members': True,
+    'member-order': 'bysource',
+    'inherited-members': False,
+    'exclude-members': '__init__, __post_init__, __new__',
 }
 
-templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+templates_path = ['_templates']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-source_suffix = {".rst": "restructuredtext"}
+source_suffix = {'.rst': 'restructuredtext'}
 
-pygments_style = "sphinx"
+pygments_style = 'sphinx'
 
 autodoc_type_aliases = {
-    "npt.ArrayLike": "ArrayLike",
+    'npt.ArrayLike': 'ArrayLike',
 }
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_rtd_theme"
+html_theme = 'sphinx_rtd_theme'
 
-htmlhelp_basename = "minkdoc"
+htmlhelp_basename = 'minkdoc'
