@@ -1,38 +1,32 @@
 """mink: MuJoCo inverse kinematics."""
 
 from .configuration import Configuration
-from .constants import (
-    FRAME_TO_ENUM,
-    FRAME_TO_JAC_FUNC,
-    FRAME_TO_POS_ATTR,
-    FRAME_TO_XMAT_ATTR,
-    SUPPORTED_FRAMES,
-)
+from .constants import SUPPORTED_FRAMES, FRAME_TO_ENUM, FRAME_TO_JAC_FUNC, FRAME_TO_POS_ATTR, FRAME_TO_XMAT_ATTR
 from .exceptions import (
+    MinkError,
+    UnsupportedFrame,
     InvalidFrame,
     InvalidKeyframe,
-    InvalidMocapBody,
-    MinkError,
     NotWithinConfigurationLimits,
-    UnsupportedFrame,
+    InvalidMocapBody,
 )
 from .lie import SE3, SO3, MatrixLieGroup
 from .limits import (
-    CollisionAvoidanceLimit,
-    ConfigurationLimit,
-    Constraint,
     Limit,
+    ConfigurationLimit,
     VelocityLimit,
+    CollisionAvoidanceLimit,
+    Constraint,
 )
 from .solve_ik import build_ik, solve_ik
 from .tasks import (
-    ComTask,
-    DampingTask,
-    FrameTask,
+    Task,
     Objective,
     PostureTask,
+    FrameTask,
+    ComTask,
+    DampingTask,
     TargetNotSet,
-    Task,
 )
 from .utils import (
     custom_configuration_vector,
@@ -41,6 +35,8 @@ from .utils import (
     get_subtree_geom_ids,
     move_mocap_to_frame,
 )
+
+__version__ = "0.0.2"
 
 __all__ = (
     "ComTask",
@@ -72,11 +68,9 @@ __all__ = (
     "FRAME_TO_JAC_FUNC",
     "FRAME_TO_POS_ATTR",
     "FRAME_TO_XMAT_ATTR",
-    "set_mocap_pose_from_frame",
-    "pose_from_mocap",
+    "move_mocap_to_frame",
     "custom_configuration_vector",
     "get_freejoint_dims",
-    "move_mocap_to_frame",
     "get_subtree_geom_ids",
     "get_body_geom_ids",
 )
