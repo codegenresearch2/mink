@@ -8,6 +8,7 @@ import qpsolvers
 from .configuration import Configuration
 from .limits import ConfigurationLimit, Limit
 from .tasks import Objective, Task
+from .exceptions import ConfigurationLimitError
 
 
 def _compute_qp_objective(
@@ -27,8 +28,8 @@ def _compute_qp_inequalities(
 ) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
     if limits is None:
         limits = [ConfigurationLimit(configuration.model)]
-    G_list: list[np.ndarray] = []
-    h_list: list[np.ndarray] = []
+    G_list = []
+    h_list = []
     for limit in limits:
         inequality = limit.compute_qp_inequalities(configuration, dt)
         if not inequality.inactive:
@@ -96,7 +97,14 @@ def solve_ik(
     Returns:
         Velocity `v` in tangent space.
     """
-    configuration.check_limits(safety_break=safety_break)
+    try:
+        configuration.check_limits(safety_break=safety_break)
+    except ConfigurationLimitError as e:
+        if safety_break:
+            raise e
+        else:
+            print(f"Warning: {e}")
+
     problem = build_ik(configuration, tasks, dt, damping, limits)
     result = qpsolvers.solve_problem(problem, solver=solver, **kwargs)
     dq = result.x
