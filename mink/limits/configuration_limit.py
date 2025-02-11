@@ -55,11 +55,11 @@ class ConfigurationLimit(Limit):
             upper[padr : padr + qpos_dim] = jnt_range[1] - min_distance_from_limits
             index_list.extend(range(padr, padr + qpos_dim))
 
+        if not index_list:
+            raise ValueError("No limited joints found.")
+
         self.indices = np.array(index_list)
         self.indices.setflags(write=False)
-
-        if not self.indices.size:
-            raise ValueError("No limited joints found.")
 
         if self.indices.max() >= model.nv:
             raise IndexError("Index exceeds the size of the array.")
