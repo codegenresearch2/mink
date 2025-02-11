@@ -1,25 +1,24 @@
-"""mink: MuJoCo inverse kinematics."""
-
 from pathlib import Path
 
-import mujoco
-import mujoco.viewer
-from dm_control import mjcf
-from loop_rate_limiters import RateLimiter
+try:
+    import mujoco
+    import mujoco.viewer
+    from dm_control import mjcf
+    from loop_rate_limiters import RateLimiter
+except ImportError:
+    print("One or more required libraries are not installed. Please install 'mujoco', 'dm_control', and 'loop_rate_limiters' to run this code.")
+    raise
 
 import mink
 
-# Constants
 _HERE = Path(__file__).parent
 _ARM_XML = _HERE / "kuka_iiwa_14" / "scene.xml"
 _HAND_XML = _HERE / "wonik_allegro" / "left_hand.xml"
+
 fingers = ["rf_tip", "mf_tip", "ff_tip", "th_tip"]
 
-# Home qpos for both arm and hand
 HOME_QPOS = [
-    # iiwa.
     -0.0759329, 0.153982, 0.104381, -1.8971, 0.245996, 0.34972, -0.239115,
-    # allegro.
     -0.0694123, 0.0551428, 0.986832, 0.671424,
     -0.186261, -0.0866821, 1.01374, 0.728192,
     -0.218949, -0.0318307, 1.25156, 0.840648,
@@ -88,7 +87,6 @@ if __name__ == "__main__":
         mink.ConfigurationLimit(model=model),
     ]
 
-    # IK settings
     solver = "quadprog"
     model = configuration.model
     data = configuration.data
@@ -102,7 +100,6 @@ if __name__ == "__main__":
         configuration.update(data.qpos)
         posture_task.set_target_from_configuration(configuration)
 
-        # Initialize the mocap target at the end-effector site
         mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
         for finger in fingers:
             mink.move_mocap_to_frame(
@@ -115,11 +112,9 @@ if __name__ == "__main__":
 
         rate = RateLimiter(frequency=100.0)
         while viewer.is_running():
-            # Update kuka end-effector task
             T_wt = mink.SE3.from_mocap_name(model, data, "target")
             end_effector_task.set_target(T_wt)
 
-            # Update finger tasks
             for finger, task in zip(fingers, finger_tasks):
                 T_pm = configuration.get_transform(
                     f"{finger}_target", "body", "allegro_left/palm", "body"
@@ -140,7 +135,6 @@ if __name__ == "__main__":
                     T_w_mocap_new.rotation().wxyz
                 )
 
-            # Compute velocity and integrate into the next configuration
             vel = mink.solve_ik(
                 configuration, tasks, rate.dt, solver, 1e-3, limits=limits
             )
@@ -149,6 +143,5 @@ if __name__ == "__main__":
 
             T_eef_prev = T_eef.copy()
 
-            # Visualize at fixed FPS
             viewer.sync()
             rate.sleep()
