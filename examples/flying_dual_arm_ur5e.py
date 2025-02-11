@@ -117,6 +117,7 @@ if __name__ == "__main__":
     solver = "quadprog"
 
     rate = RateLimiter(frequency=200.0, warn=False)  # Initialize RateLimiter here
+    t = 0.0  # Initialize t before the main loop
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -130,7 +131,6 @@ if __name__ == "__main__":
         ):
             mink.move_mocap_to_frame(model, data, mocap, frame, "site")
 
-        t = 0.0  # Initialize t before the main loop
         while viewer.is_running():
             rate.sleep()  # Ensure RateLimiter is used within the loop
             t += rate.dt  # Update t after sleeping
