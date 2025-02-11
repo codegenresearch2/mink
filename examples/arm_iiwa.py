@@ -40,8 +40,6 @@ if __name__ == "__main__":
     ori_threshold = 1e-4
     max_iters = 20
 
-    rate = RateLimiter(frequency=500.0, warn=False)
-
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
     ) as viewer:
@@ -55,11 +53,13 @@ if __name__ == "__main__":
         # Initialize the mocap target at the end-effector site.
         mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
 
-        # Update task target inside the main loop.
-        T_wt = mink.SE3.from_mocap_name(model, data, "target")
-        end_effector_task.set_target(T_wt)
+        rate = RateLimiter(frequency=500.0, warn=False)
 
+        # Update task target inside the main loop.
         while viewer.is_running():
+            T_wt = mink.SE3.from_mocap_name(model, data, "target")
+            end_effector_task.set_target(T_wt)
+
             # Compute velocity and integrate into the next configuration.
             for i in range(max_iters):
                 vel = mink.solve_ik(configuration, tasks, rate.dt, solver, 1e-3)
