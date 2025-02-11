@@ -52,8 +52,9 @@ if __name__ == "__main__":
     limits.append(velocity_limit)
 
     # Get the mocap ID for the "target" body
-    target_mocap_id = model.body("target").mocapid[0]
+    mid = model.body("target").mocapid[0]
 
+    # Assign model and data from configuration
     model = configuration.model
     data = configuration.data
     solver = "quadprog"
