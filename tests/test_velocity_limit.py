@@ -60,6 +60,13 @@ class TestVelocityLimit(absltest.TestCase):
         expected_limit = np.asarray([np.pi] * nb)
         np.testing.assert_allclose(limit.limit, expected_limit)
 
+        # Check the shapes of G and h after compute_qp_inequalities
+        G, h = limit.compute_qp_inequalities(self.configuration, 1e-3)
+        self.assertIsNotNone(G)
+        self.assertIsNotNone(h)
+        self.assertEqual(G.shape, (2 * nb, nv))
+        self.assertEqual(h.shape, (2 * nb,))
+
     def test_model_with_ball_joint(self):
         """Test the velocity limit with a ball joint."""
         xml_str = """
