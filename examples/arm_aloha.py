@@ -64,7 +64,7 @@ if __name__ == "__main__":
         ),
         posture_task := mink.PostureTask(
             joint_names=joint_names,
-            position_cost=0.1,  # Adjusted cost value to match the gold code
+            position_cost=1e-4,  # Adjusted cost value to match the gold code
             velocity_cost=0.1,
         ),
     ]
@@ -72,16 +72,12 @@ if __name__ == "__main__":
     # Enable collision avoidance between the following geoms:
     # geoms starting at subtree "right wrist" - "table",
     # geoms starting at subtree "left wrist"  - "table",
-    # geoms starting at subtree "right wrist" - geoms starting at subtree "left wrist".
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
-    upper_arm_l_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
-    upper_arm_r_geoms = mink.get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
     frame_geoms = mink.get_body_geom_ids(model, model.body("metal_frame").id)
     collision_pairs = [
         (l_wrist_geoms, r_wrist_geoms),
         (l_wrist_geoms + r_wrist_geoms, frame_geoms + ["table"]),
-        (upper_arm_l_geoms, upper_arm_r_geoms),  # Added upper arm geoms to collision pairs
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
@@ -119,7 +115,7 @@ if __name__ == "__main__":
         mink.move_mocap_to_frame(model, data, "right/target", "right/gripper", "site")
 
         # Set target for posture task from current configuration
-        posture_task.set_target(configuration.q)
+        posture_task.set_target_from_configuration(configuration)
 
         rate = RateLimiter(frequency=200.0)
         while viewer.is_running():
@@ -139,10 +135,10 @@ if __name__ == "__main__":
                 )
                 configuration.integrate_inplace(vel, rate.dt)
 
-                l_err = l_ee_task.compute_error(l_ee_task)  # Corrected error computation
+                l_err = l_ee_task.compute_error(configuration)  # Corrected error computation
                 l_pos_achieved = np.linalg.norm(l_err[:3]) <= pos_threshold
                 l_ori_achieved = np.linalg.norm(l_err[3:]) <= ori_threshold
-                r_err = r_ee_task.compute_error(r_ee_task)  # Corrected error computation
+                r_err = r_ee_task.compute_error(configuration)  # Corrected error computation
                 r_pos_achieved = np.linalg.norm(r_err[:3]) <= pos_threshold
                 r_ori_achieved = np.linalg.norm(r_err[3:]) <= ori_threshold
                 if (
