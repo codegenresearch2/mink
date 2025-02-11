@@ -84,14 +84,15 @@ class VelocityLimit(Limit):
         more information.
 
         Args:
-            configuration: Robot configuration :math:`q`.
+            configuration: Robot configuration :math:`q`. (Unused)
             dt: Integration timestep in [s].
 
         Returns:
             Pair :math:`(G, h)` representing the inequality constraint as
             :math:`G \Delta q \leq h`, or ``None`` if there is no limit.
+            The shapes of G and h are (2 * len(indices), nv), where nv is the number of velocity
+            degrees of freedom in the model.
         """
-        del configuration  # Unused.
         if self.projection_matrix is None:
             return Constraint()
         G = np.vstack([self.projection_matrix, -self.projection_matrix])
