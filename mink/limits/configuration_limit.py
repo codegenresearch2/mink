@@ -6,7 +6,7 @@ import mujoco
 import numpy as np
 
 from ..configuration import Configuration
-from ..constants import qpos_width
+from ..constants import dof_width
 from .exceptions import LimitDefinitionError
 from .limit import Constraint, Limit
 
@@ -45,15 +45,18 @@ class ConfigurationLimit(Limit):
         upper = np.full(model.nq, mujoco.mjMAXVAL)
         for jnt in range(model.njnt):
             jnt_type = model.jnt_type[jnt]
-            qpos_dim = qpos_width(jnt_type)
-            jnt_range = model.jnt_range[jnt]
-            padr = model.jnt_qposadr[jnt]
+            jnt_dim = dof_width(jnt_type)
+            jnt_id = model.jnt_dofadr[jnt]
             if jnt_type == mujoco.mjtJoint.mjJNT_FREE or not model.jnt_limited[jnt]:
                 continue  # Skip free joints and joints without limits.
 
-            lower[padr : padr + qpos_dim] = jnt_range[0] + min_distance_from_limits
-            upper[padr : padr + qpos_dim] = jnt_range[1] - min_distance_from_limits
-            index_list.extend(range(padr, padr + qpos_dim))
+            lower[jnt_id : jnt_id + jnt_dim] = (
+                model.jnt_range[jnt][0] + min_distance_from_limits
+            )
+            upper[jnt_id : jnt_id + jnt_dim] = (
+                model.jnt_range[jnt][1] - min_distance_from_limits
+            )
+            index_list.extend(range(jnt_id, jnt_id + jnt_dim))
 
         if not index_list:
             raise ValueError("No limited joints found.")
