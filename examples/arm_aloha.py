@@ -4,7 +4,6 @@ import mujoco.viewer
 import numpy as np
 from loop_rate_limiters import RateLimiter
 import mink
-from typing import Optional, Sequence
 
 _HERE = Path(__file__).parent
 _XML = _HERE / "aloha" / "scene.xml"
@@ -23,14 +22,14 @@ _JOINT_NAMES = [
 # https://github.com/Interbotix/interbotix_ros_manipulators/blob/main/interbotix_ros_xsarms/interbotix_ros_xsarm_descriptions/urdf/vx300s.urdf.xacro
 _VELOCITY_LIMITS = {k: np.pi for k in _JOINT_NAMES}
 
-def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: Sequence[int], grav: np.ndarray = np.array([0, 0, -9.81]), qfrc_applied: Optional[np.ndarray] = None) -> None:
+def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: list[int], grav: np.ndarray = np.array([0, 0, -9.81]), qfrc_applied: np.ndarray | None = None) -> None:
     """
     Computes forces to counteract gravity for specific subtrees.
     
     Args:
         model (mujoco.MjModel): The Mujoco model object.
         data (mujoco.MjData): The Mujoco data object.
-        subtree_ids (Sequence[int]): List of subtree IDs for which gravity compensation is applied.
+        subtree_ids (list[int]): List of subtree IDs for which gravity compensation is applied.
         grav (np.ndarray, optional): Gravitational acceleration vector. Defaults to np.array([0, 0, -9.81]).
         qfrc_applied (Optional[np.ndarray], optional): Array to store the computed forces. If None, the forces are applied directly to the data. Defaults to None.
     """
@@ -38,11 +37,9 @@ def compensate_gravity(model: mujoco.MjModel, data: mujoco.MjData, subtree_ids: 
         qfrc_applied = data.qfrc_applied
     qfrc_applied[:] = 0  # Reset the qfrc_applied array to avoid unintended accumulation
     for subtree_id in subtree_ids:
-        total_mass = 0
+        total_mass = model.body_subtreemass[subtree_id]
         jac = np.zeros((6, model.nv))
         mujoco.mj_jacSubtree(model, data.mocap_pos, subtree_id, jac)
-        for i in range(jac.shape[1]):
-            total_mass += model.body(model.joint(i).parent).mass
         gravity_compensation = -grav * total_mass
         qfrc_applied[model.joint_subtree(subtree_id)[0].dofadr] = gravity_compensation
 
@@ -82,7 +79,7 @@ def construct_tasks(model: mujoco.MjModel) -> list[mink.FrameTask]:
     posture_task = mink.PostureTask(model, cost=1e-4)
     return [l_ee_task, r_ee_task, posture_task]
 
-def construct_collision_pairs(model: mujoco.MjModel) -> list[tuple[np.ndarray, list[str]]]:
+def construct_collision_pairs() -> list[tuple[np.ndarray, list[str]]]:
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
     l_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
@@ -110,7 +107,7 @@ if __name__ == "__main__":
     data = construct_data(model)
     joint_names, dof_ids, actuator_ids, velocity_limits = get_joint_and_actuator_ids(model)
     tasks = construct_tasks(model)
-    collision_pairs = construct_collision_pairs(model)
+    collision_pairs = construct_collision_pairs()
     limits = construct_limits(model, joint_names, velocity_limits, collision_pairs)
 
     l_mid = model.body("left/target").mocapid[0]
