@@ -76,7 +76,7 @@ if __name__ == "__main__":
         mink.move_mocap_to_frame(model, data, "body_target", "body", "body")
         mink.move_mocap_to_frame(model, data, "EE_target", "EE", "site")
 
-        rate = RateLimiter(frequency=500.0)
+        rate = RateLimiter(frequency=500.0, warn=False)
         while viewer.is_running():
             base_task.set_target(mink.SE3.from_mocap_id(data, base_mid))
             for i, task in enumerate(feet_tasks):
@@ -90,14 +90,9 @@ if __name__ == "__main__":
 
                 pos_achieved = True
                 ori_achieved = True
-                for task in [
-                    eef_task,
-                    base_task,
-                    *feet_tasks,
-                ]:
-                    err = task.compute_error(configuration)
-                    pos_achieved &= bool(np.linalg.norm(err[:3]) <= pos_threshold)
-                    ori_achieved &= bool(np.linalg.norm(err[3:]) <= ori_threshold)
+                err = eef_task.compute_error(configuration)
+                pos_achieved = bool(np.linalg.norm(err[:3]) <= pos_threshold)
+                ori_achieved = bool(np.linalg.norm(err[3:]) <= ori_threshold)
                 if pos_achieved and ori_achieved:
                     break
 
