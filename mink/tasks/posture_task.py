@@ -1,5 +1,7 @@
 """Posture task implementation."""
 
+from __future__ import annotations
+
 from typing import Optional
 
 import mujoco
