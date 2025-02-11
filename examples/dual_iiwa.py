@@ -1,12 +1,12 @@
 """Task adapted from https://github.com/stephane-caron/pink/pull/94."""
 
 from pathlib import Path
+from loop_rate_limiters import RateLimiter
 
 import mujoco
 import mujoco.viewer
 import numpy as np
 from dm_control import mjcf
-from loop_rate_limiters import RateLimiter
 
 import mink
 
@@ -131,7 +131,7 @@ if __name__ == "__main__":
             model, data, "r_target", "r_iiwa/attachment_site", "site"
         )
 
-        rate = RateLimiter(frequency=60.0, warn=False)
+        rate = RateLimiter(frequency=60.0, warn=True)  # Added warning option
         t = 0.0
         while viewer.is_running():
             mu = (1 + np.cos(t)) / 2
