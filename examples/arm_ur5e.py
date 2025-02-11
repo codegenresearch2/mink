@@ -13,6 +13,7 @@ _XML = _HERE / "universal_robots_ur5e" / "scene.xml"
 
 if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(_XML.as_posix())
+    data = mujoco.MjData(model)
 
     configuration = mink.Configuration(model)
 
@@ -28,12 +29,15 @@ if __name__ == "__main__":
 
     # Enable collision avoidance between the following geoms:
     collision_pairs = [
-        (["wrist_3_link"], ["floor", "wall"]),
+        (mink.get_body_geom_ids(model, model.body("wrist_3_link").id), ["floor", "wall"]),
     ]
 
     limits = [
-        mink.ConfigurationLimit(model=model),
-        mink.CollisionAvoidanceLimit(model=model, geom_pairs=collision_pairs),
+        mink.ConfigurationLimit(model=configuration.model),
+        mink.CollisionAvoidanceLimit(
+            model=configuration.model,
+            geom_pairs=collision_pairs,
+        ),
     ]
 
     max_velocities = {
@@ -58,7 +62,9 @@ if __name__ == "__main__":
         mujoco.mjv_defaultFreeCamera(model, viewer.cam)
 
         # Initialize to the home keyframe.
-        configuration.update_from_keyframe("home")
+        mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+        configuration.update(data.qpos)
+        mujoco.mj_forward(model, data)
 
         # Initialize the mocap target at the end-effector site.
         mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
@@ -71,7 +77,7 @@ if __name__ == "__main__":
 
             # Compute velocity and integrate into the next configuration.
             vel = mink.solve_ik(
-                configuration, tasks, rate.dt, solver, 1e-3, limits=limits
+                configuration, tasks, rate.dt, solver, damping=1e-3, limits=limits
             )
             configuration.integrate_inplace(vel, rate.dt)
             mujoco.mj_camlight(model, data)
