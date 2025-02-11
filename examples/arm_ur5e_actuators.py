@@ -57,7 +57,7 @@ if __name__ == "__main__":
     ## =================== IK Settings. =================== ##
 
     # Initialize the mocap target at the end-effector site.
-    mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
+    mid = model.body("target").mocapid[0]
 
     # IK settings.
     solver = "quadprog"
@@ -73,6 +73,8 @@ if __name__ == "__main__":
         mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
         configuration.update(data.qpos)
         mujoco.mj_forward(model, data)
+
+        mink.move_mocap_to_frame(model, data, "target", "attachment_site", "site")
 
         rate = RateLimiter(frequency=500.0)
         while viewer.is_running():
