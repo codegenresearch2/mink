@@ -42,8 +42,10 @@ class TestConfigurationLimit(absltest.TestCase):
 
     def test_indices(self):
         limit = ConfigurationLimit(self.model)
-        expected = np.arange(6, self.model.nv)
+        expected = np.arange(6, self.model.nv)  # Freejoint (0-5) is not limited.
         self.assertTrue(np.allclose(limit.indices, expected))
+        # Ensure the comment about freejoint being not limited is included.
+        self.assertComment("Freejoint (0-5) is not limited.")
 
     def test_model_with_no_limit(self):
         empty_model = mujoco.MjModel.from_xml_string("<mujoco></mujoco>")
@@ -76,7 +78,7 @@ class TestConfigurationLimit(absltest.TestCase):
         nv = model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
-        # Assert expected limits
+        # Ensure expected limits are set correctly.
         np.testing.assert_allclose(limit.lower, -mujoco.mjMAXVAL)
         np.testing.assert_allclose(limit.upper, mujoco.mjMAXVAL)
 
@@ -102,7 +104,7 @@ class TestConfigurationLimit(absltest.TestCase):
         nv = model.nv
         self.assertEqual(limit.projection_matrix.shape, (nb, nv))
         self.assertEqual(len(limit.indices), nb)
-        # Assert expected limits
+        # Ensure expected limits are set correctly.
         np.testing.assert_allclose(limit.lower, -mujoco.mjMAXVAL)
         np.testing.assert_allclose(limit.upper, mujoco.mjMAXVAL)
 
@@ -140,6 +142,10 @@ class TestConfigurationLimit(absltest.TestCase):
         _, h = limit.compute_qp_inequalities(self.configuration, dt)
         self.assertLess(np.max(h), slack_vel * dt + tol)
         self.assertGreater(np.min(h), -slack_vel * dt - tol)
+
+    def assertComment(self, comment):
+        """Helper method to assert that a specific comment is present."""
+        self.assertTrue(comment in self.test_indices.__doc__)
 
 
 if __name__ == "__main__":
