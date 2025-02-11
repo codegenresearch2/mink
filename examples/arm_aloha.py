@@ -64,24 +64,17 @@ if __name__ == "__main__":
         ),
         posture_task := mink.PostureTask(
             joint_names=joint_names,
-            position_cost=0.1,  # Match the cost parameter as per the gold code
+            position_cost=1e-4,  # Adjust the cost parameter to match the gold code
             velocity_cost=0.1,
         ),
     ]
 
-    # Enable collision avoidance between the following geoms:
-    # geoms starting at subtree "right wrist" - "table",
-    # geoms starting at subtree "left wrist"  - "table",
-    # geoms starting at subtree "right wrist" - geoms starting at subtree "left wrist".
+    # Simplify collision pairs to match the gold code
     l_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("left/wrist_link").id)
     r_wrist_geoms = mink.get_subtree_geom_ids(model, model.body("right/wrist_link").id)
-    upper_arm_l_geoms = mink.get_subtree_geom_ids(model, model.body("left/upper_arm_link").id)
-    upper_arm_r_geoms = mink.get_subtree_geom_ids(model, model.body("right/upper_arm_link").id)
-    frame_geoms = mink.get_body_geom_ids(model, model.body("metal_frame").id)
     collision_pairs = [
         (l_wrist_geoms, r_wrist_geoms),
-        (l_wrist_geoms + r_wrist_geoms, frame_geoms + ["table"]),
-        (upper_arm_l_geoms, upper_arm_r_geoms),
+        (l_wrist_geoms + r_wrist_geoms, ["table"]),
     ]
     collision_avoidance_limit = mink.CollisionAvoidanceLimit(
         model=model,
@@ -100,9 +93,9 @@ if __name__ == "__main__":
     l_mid = model.body("left/target").mocapid[0]
     r_mid = model.body("right/target").mocapid[0]
     solver = "quadprog"
-    pos_threshold = 1e-2  # Match the threshold value as per the gold code
-    ori_threshold = 1e-2  # Match the threshold value as per the gold code
-    max_iters = 2  # Match the maximum iterations value as per the gold code
+    pos_threshold = 1e-2
+    ori_threshold = 1e-2
+    max_iters = 2
 
     with mujoco.viewer.launch_passive(
         model=model, data=data, show_left_ui=False, show_right_ui=False
@@ -118,7 +111,7 @@ if __name__ == "__main__":
         mink.move_mocap_to_frame(model, data, "left/target", "left/gripper", "site")
         mink.move_mocap_to_frame(model, data, "right/target", "right/gripper", "site")
 
-        # Set posture task target from current configuration.
+        # Initialize posture task target from current configuration.
         posture_task.set_target_from_configuration(configuration)  # Use the correct method
 
         rate = RateLimiter(frequency=200.0)
@@ -135,7 +128,7 @@ if __name__ == "__main__":
                     rate.dt,
                     solver,
                     limits=limits,
-                    damping=1e-5,  # Match the damping value as per the gold code
+                    damping=1e-5,
                 )
                 configuration.integrate_inplace(vel, rate.dt)
 
