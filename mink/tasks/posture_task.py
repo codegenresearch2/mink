@@ -78,11 +78,13 @@ class PostureTask(Task):
     def compute_error(self, configuration: Configuration) -> np.ndarray:
         r"""Compute the posture task error.
 
-        The error is defined as:
+        The error is defined as the difference between the target posture and the current posture:
 
         .. math::
 
-            e(q) = q^* \ominus q
+            e(q) = q^* - q
+
+        where :math:`q^*` is the target posture and :math:`q` is the current posture.
 
         Args:
             configuration: Robot configuration :math:`q`.
@@ -93,15 +95,8 @@ class PostureTask(Task):
         if self.target_q is None:
             raise TargetNotSet(self.__class__.__name__)
 
-        # NOTE: mj_differentiatePos calculates qpos2 ⊖ qpos1.
-        qvel = np.empty(configuration.nv)
-        mujoco.mj_differentiatePos(
-            m=configuration.model,
-            qvel=qvel,
-            dt=1.0,
-            qpos1=configuration.q,
-            qpos2=self.target_q,
-        )
+        # Compute the error as the difference between the target posture and the current posture
+        qvel = self.target_q - configuration.q
 
         if self._v_ids is not None:
             qvel[self._v_ids] = 0.0
@@ -111,7 +106,7 @@ class PostureTask(Task):
     def compute_jacobian(self, configuration: Configuration) -> np.ndarray:
         r"""Compute the posture task Jacobian.
 
-        The task Jacobian is the identity :math:`I_{n_v}`.
+        The task Jacobian is the identity matrix :math:`I_{n_v}`, where :math:`n_v` is the number of actuated joints.
 
         Args:
             configuration: Robot configuration :math:`q`.
@@ -122,7 +117,9 @@ class PostureTask(Task):
         if self.target_q is None:
             raise TargetNotSet(self.__class__.__name__)
 
-        jac = -np.eye(configuration.nv)
+        # Create an identity matrix of size (n_v, n_v)
+        jac = np.eye(configuration.nv)
+
         if self._v_ids is not None:
             jac[:, self._v_ids] = 0.0
 
