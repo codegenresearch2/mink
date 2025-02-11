@@ -118,11 +118,18 @@ if __name__ == "__main__":
                 )
                 configuration.integrate_inplace(vel, rate.dt)
 
-                # Correctly calculate the error for the right end-effector task.
+                # Calculate the error for the right end-effector task.
                 r_err = r_ee_task.compute_error(configuration)
                 r_pos_achieved = np.linalg.norm(r_err[:3]) <= pos_threshold
                 r_ori_achieved = np.linalg.norm(r_err[3:]) <= ori_threshold
-                if r_pos_achieved and r_ori_achieved:
+
+                # Calculate the error for the left end-effector task.
+                l_err = l_ee_task.compute_error(configuration)
+                l_pos_achieved = np.linalg.norm(l_err[:3]) <= pos_threshold
+                l_ori_achieved = np.linalg.norm(l_err[3:]) <= ori_threshold
+
+                # Check if both end-effector tasks have achieved their goals.
+                if l_pos_achieved and l_ori_achieved and r_pos_achieved and r_ori_achieved:
                     break
 
             data.ctrl[actuator_ids] = configuration.q[dof_ids]
